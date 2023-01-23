@@ -5,11 +5,17 @@
 #include <iostream>
 #include <Eigen/Dense>
 
+using namespace std;
+
+
 
 //typedef Eigen::Matrix<std::complex<double>, 2, 2> ComplexMatrix2d;
 //typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> Eigen::MatrixXcd;
 
 //	MyMatrix is COMPLEX despite it saying Xd (must be Xcd)
+
+
+
 class MyMatrixXd : public Eigen::MatrixXcd
 {
 	public:
@@ -174,13 +180,109 @@ typedef struct s_param
 }	t_param;
 
 
+void		init_xy(t_param *param, double *arg, const gsl_vector *x, int i)
+{
+
+
+//#if 0
+
+		int DELETE_ONE_TEST;
+
+		double B, A, Y, X, w;
+/*
+		Y = arg[0 + param->line_length * i];
+		X = arg[1 + param->line_length * i];
+		B = arg[2 + param->line_length * i];
+		A = arg[3 + param->line_length * i];
+*/
+		Y = gsl_vector_get(x, 0 + param->line_length * i);
+		X = gsl_vector_get(x, 1 + param->line_length * i);
+		B = gsl_vector_get(x, 2 + param->line_length * i);
+		A = gsl_vector_get(x, 3 + param->line_length * i);
+
+
+//		std::complex<double> x[2];
+//		std::complex<double> y[2];
+
+//		MyMatrixXd x(d,1);
+//		MyMatrixXd y(d,1);
+
+//		for future transposition
+//		MyMatrixXd xt(d,1);
+//		MyMatrixXd yt(d,1);
+
+
+//		init |x> and |y> from parameters A, B, X, Y, alway explicitly
+//		passed to my_f() so that <x|x> = <y|y> = 1
+
+		param->x(0, 0) = cos(Y); //					cos(Y)
+//					magnitude (>0 always)
+//		x(1, 0) = sgn(sin(Y)) * polar(abs(sin(Y)), X);//	sin(Y) * e^iX
+		param->x(1, 0) = sin(Y) * polar(1.0, X);//	sin(Y) * e^iX
+		param->y(0, 0) = cos(B); //					cos(B)
+//		y(1, 0) = sgn(sin(B)) * polar(abs(sin(B)), A);//	sin(B) * e^iA
+		param->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
+
+//#endif
+
+#if 0
+		int DELETE_ONE_TEST;
+
+
+
+		double xal, xbe, xga, xA, xB, xC;
+
+		double yal, ybe, yga, yA, yB, yC;
+
+//		поміняти починаючи з 1;
+
+		xal = gsl_vector_get(x, 0 + param->line_length * i);
+		xbe =  gsl_vector_get(x, 1 + param->line_length * i);
+		xga =  gsl_vector_get(x, 2 + param->line_length * i);
+		xA =  gsl_vector_get(x, 3 + param->line_length * i);
+		xB =  gsl_vector_get(x, 4 + param->line_length * i);
+		xC =  gsl_vector_get(x, 5 + param->line_length * i);
+
+		yal = gsl_vector_get(x, 6 + param->line_length * i);
+		ybe = gsl_vector_get(x, 7 + param->line_length * i);
+		yga = gsl_vector_get(x, 8 + param->line_length * i);
+		yA = gsl_vector_get(x, 9 + param->line_length * i);
+		yB = gsl_vector_get(x, 10 + param->line_length * i);
+		yC = gsl_vector_get(x, 11 + param->line_length * i);
+
+
+
+
+		param->x(0, 0) = cos(xal) * cos(xbe) * cos(xga);
+		param->x(1, 0) = polar(1.0, xA) * cos(xal) * sin(xbe) * cos(xga);
+		param->x(2, 0) = polar(1.0, xB) * sin(xal) * cos(xga);
+		param->x(3, 0) = polar(1.0, xC) * sin(xga);
+
+
+		param->y(0, 0) = cos(yal) * cos(ybe) * cos(yga);
+		param->y(1, 0) = polar(1.0, yA) * cos(yal) * sin(ybe) * cos(yga);
+		param->y(2, 0) = polar(1.0, yB) * sin(yal) * cos(yga);
+		param->y(3, 0) = polar(1.0, yC) * sin(yga);
+
+# endif
+
+		param->xt = param->x;
+		param->yt = param->y;
+		param->xt.adjointInPlace() ;
+		param->yt.adjointInPlace();
+
+//		std::cout << sqrt((t * (param->d2 - 1) + 1) / param->d) << std::endl;
+	}
+//#endif
+
+////////////////////////////////////////////////////
+
+
+
 
 template <typename T> double sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
-
-using namespace std;
-
 /*function to minimize*/
 	//v = the argument of the fucntion
 double	my_f (const gsl_vector *v, void *params)
@@ -209,16 +311,18 @@ double	my_f (const gsl_vector *v, void *params)
 		}
 	}
 
+
 //	the last weight is rewritten to be this,
 //	can be problems with this as the absolute value of last weight may be bigger than 1
 //	std::cout << "calculating my_f(" << v << ")" << std::endl;
 //	std::cout << "t =  " << t << ", d = " << d << std::endl;
 
 //	arg[i][0] i = 0,1,2... number_of_weights - 1 are all number_of_weights weights
-	arg[number_of_weights - 1][0] = 1;
+//	arg[number_of_weights - 1][0] = 1;
 
-	for (int i = 0; i < number_of_weights - 1; i++)
+/*	for (int i = 0; i < number_of_weights - 1; i++)
 		arg[number_of_weights - 1][0] -= abs(arg[i][0]);
+*/
 
 /*	if (arg[number_of_weights - 1][0] < 0)
 		printf("POTENTIAL PROBLEM: weight < 0\n");
@@ -267,18 +371,21 @@ double	my_f (const gsl_vector *v, void *params)
 	for (int i = 0; i < number_of_terms; i++)
 	{
 //		|x><x|_i
-		w = abs(arg[i][0]);
+//		w = abs(arg[i][0]);
 		w = 1 / (double)p->number_of_terms;
 
+//		printf("init xy\n");
+		init_xy(p, arg[0], v, i);
+//		printf("done\n");
 #if 0
 
 		int DELETE_ONE_TEST;
 
 
-		Y = arg[i][1];
-		X = arg[i][2];
-		B = arg[i][3];
-		A = arg[i][4];
+		Y = arg[i][0];
+		X = arg[i][1];
+		B = arg[i][2];
+		A = arg[i][3];
 
 //		std::complex<double> x[2];
 //		std::complex<double> y[2];
@@ -304,7 +411,7 @@ double	my_f (const gsl_vector *v, void *params)
 
 #endif
 
-//#if 0
+#if 0
 
 /*
 		MyMatrixXd x(d,1);
@@ -323,19 +430,21 @@ double	my_f (const gsl_vector *v, void *params)
 
 		double yal, ybe, yga, yA, yB, yC;
 
-		xal = arg[i][1];
-		xbe = arg[i][2];
-		xga = arg[i][3];
-		xA = arg[i][4];
-		xB = arg[i][5];
-		xC = arg[i][6];
+//		поміняти починаючи з 1;
 
-		yal = arg[i][7];
-		ybe = arg[i][8];
-		yga = arg[i][9];
-		yA = arg[i][10];
-		yB = arg[i][11];
-		yC = arg[i][12];
+		xal = arg[i][0];
+		xbe = arg[i][1];
+		xga = arg[i][2];
+		xA = arg[i][3];
+		xB = arg[i][4];
+		xC = arg[i][5];
+
+		yal = arg[i][6];
+		ybe = arg[i][7];
+		yga = arg[i][8];
+		yA = arg[i][9];
+		yB = arg[i][10];
+		yC = arg[i][11];
 
 
 
@@ -351,7 +460,8 @@ double	my_f (const gsl_vector *v, void *params)
 		p->y(2, 0) = polar(1.0, yB) * sin(yal) * cos(yga);
 		p->y(3, 0) = polar(1.0, yC) * sin(yga);
 
-//# endif
+# endif
+/*
 		p->xt = p->x;
 		p->yt = p->y;
 
@@ -366,7 +476,7 @@ double	my_f (const gsl_vector *v, void *params)
 //		yt.transposeInPlace();
 //		yt.conjugate();
 		p->yt.adjointInPlace();
-
+*/
 
 //		Mx = |x><x|
 //		My = |y><y|
@@ -540,8 +650,11 @@ double	my_f (const gsl_vector *v, void *params)
 
 //	for (int k = 0; k < 4; k++)
 //	{
-//			std::cout << p->Identity << std::endl << std::endl;
+//		std::cout << "M was" << std::endl << p->M << std::endl;
+
+//			std::cout << (1 - t) / (double)(d * d) * p->Identity << std::endl << std::endl;
 		p->M-= (1-t) / (double)(d*d) * /* MyMatrixXd::*/p->Identity;
+
 //	}
 //	std::cout << "Matrix is \n" << M <<std::endl;	
 	double n = 0;
@@ -558,11 +671,21 @@ double	my_f (const gsl_vector *v, void *params)
 	return (n);
 }
 
+
+
+
+
+
+
+
+
+
+
 int	main(void)
 {
 	srand(time(0));
-	int d = 4;
-	double t = 1/(2 * (double)(d + 1));
+	int d = 2;
+	double t = 1/( (double)(d + 1));
 //                       t   d
 	double par[2] = {t, (double)d};
 	printf("d = %d, t = %f\n", d, t);
@@ -635,7 +758,7 @@ v1.Kron(v2,result);
 	param.number_of_terms = d * d;
 	param.number_of_weights = d * d;
 	
-	param.degrees_of_freedom = param.number_of_weights + param.number_of_terms * 2 * param.degrees_in_vector;
+	param.degrees_of_freedom = param.number_of_terms * 2 * param.degrees_in_vector;
 	param.d = d;
 	param.d2 = d * d;
 
@@ -644,11 +767,13 @@ v1.Kron(v2,result);
 //	16 weights + 16 * 2 complex vectors that each have 6 degrees of freedom
 
 	printf("alloc\n");
+	printf("degrees of freedom %d\n", param.degrees_of_freedom);
 	x = gsl_vector_alloc(param.degrees_of_freedom);
 //	structure of x: weight1, x1_param1, x1_param2, ..., y1_param1, y1_param2, ...
 //			weight2, x2_param1, x2_param2, ..., y2_param1, y2_param2, ...
 //			line length = 2 * d - 2
-	param.line_length = 2 * param.degrees_in_vector + 1; // length of parameters pertaining to the first term (first weight)
+	param.line_length = 2 * param.degrees_in_vector; // length of parameters pertaining to the first term (first weight)
+	printf("line length: %d\n", param.line_length);
 	param.lines = param.number_of_terms;
 
 	param.Mx = MyMatrixXd(d,d);
@@ -714,23 +839,8 @@ v1.Kron(v2,result);
 			MyMatrixXd vit(d,1);
 			MyMatrixXd vjt(d,1);
 
-//			std::cout << "Basis.col( " << i << ")" << std::endl << Basis.col(i) << std::endl;
-
-/*			printf("Basis rows %d\n", Basis.col(i).rows());
-			printf("vi rows %d\n", vi.rows());
-
-			printf("Basis cols %d\n", Basis.col(i).cols());
-			printf("vi cols %d\n", vi.cols());
-
-*/
 			for (int k = 0; k < d; k++)
 				vi(k) = Basis.col(i)(k);
-
-
-//			std::cout << "vi" << std::endl << vi << std::endl;
-
-
-//			vj = Basis.col(j);
 
 			for (int k = 0; k < d; k++)
 				vj(k) = Basis.col(j)(k);
@@ -760,9 +870,6 @@ v1.Kron(v2,result);
 
 			MyMatrixXd term(param.d2, param.d2);
 			vjvi.Kron(vivjt, term);
-
-//			std::cout << "term i j =" << std::endl << i << " " << j << std::endl << term << std::endl;
-
 
 			param.Usw = param.Usw + term;
 		}
@@ -800,7 +907,31 @@ v1.Kron(v2,result);
 	gsl_vector_set (x, 17, -5 * M_PI / 4.0);
 	gsl_vector_set (x, 18, 0.8745);
 	gsl_vector_set (x, 19, -5 * M_PI / 4.0);
+
 */
+
+	gsl_vector_set (x, 0, 0.17278);
+	gsl_vector_set (x, 1, M_PI / 4.0);
+	gsl_vector_set (x, 2, 0.6936);
+	gsl_vector_set (x, 3, M_PI / 4.0);
+
+	gsl_vector_set (x, 4, 0.17278);
+	gsl_vector_set (x, 5, 5 * M_PI / 4.0);
+	gsl_vector_set (x, 6, 0.6936);
+	gsl_vector_set (x, 7, 5 * M_PI / 4.0);
+
+	gsl_vector_set (x, 8, 1.398);
+	gsl_vector_set (x, 9, -M_PI / 4.0);
+	gsl_vector_set (x, 10, 0.8745);
+	gsl_vector_set (x, 11, -M_PI / 4.0);
+
+
+	gsl_vector_set (x, 12, 1.398);
+	gsl_vector_set (x, 13, -5 * M_PI / 4.0);
+	gsl_vector_set (x, 14, 0.8745);
+	gsl_vector_set (x, 15, -5 * M_PI / 4.0);
+
+
 
 
 
@@ -815,7 +946,7 @@ v1.Kron(v2,result);
 
 	/* Set initial step sizes to 1 */
 	ss = gsl_vector_alloc (param.degrees_of_freedom);
-	gsl_vector_set_all (ss, 0.1);
+	gsl_vector_set_all (ss, 0.01);
 
 	/* Initialize method and iterate */
 	minex_func.n = param.degrees_of_freedom;
@@ -824,6 +955,8 @@ v1.Kron(v2,result);
 
 	s = gsl_multimin_fminimizer_alloc (T, param.degrees_of_freedom);
 	gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+
+	double arg[param.number_of_terms][param.line_length];
 
 	do
 	{
@@ -834,46 +967,16 @@ v1.Kron(v2,result);
 			break;
 
 		size = gsl_multimin_fminimizer_size (s);
-		status = gsl_multimin_test_size (size, 1e-7);
+		status = gsl_multimin_test_size (size, 1e-8);
 
 		if (status == GSL_SUCCESS)
 		{
-/*			printf ("converged to minimum at\n");
+				printf ("converged to minimum at %zu:\n", iter);
 
-		printf ("%d:\n%f,%f,%f,%f,%f\n%f,%f,%f,%f,%f\n%f,%f,%f,%f,%f\n%f,%f,%f,%f,%f\n f() = %f size = %f\n",
-						iter,
-						abs(gsl_vector_get (s->x, 0)),
-						gsl_vector_get (s->x, 1),
-						gsl_vector_get (s->x, 2),
-						gsl_vector_get (s->x, 3),
-						gsl_vector_get (s->x, 4),
-
-						abs(gsl_vector_get (s->x, 5)),
-						gsl_vector_get (s->x, 6),
-						gsl_vector_get (s->x, 7),
-						gsl_vector_get (s->x, 8),
-						gsl_vector_get (s->x, 9),
-
-						abs(gsl_vector_get (s->x, 10)),
-						gsl_vector_get (s->x, 11),
-						gsl_vector_get (s->x, 12),
-						gsl_vector_get (s->x, 13),
-						gsl_vector_get (s->x, 14),
-
-						1 - abs(gsl_vector_get (s->x, 0)) - abs(gsl_vector_get (s->x, 5))  - abs(gsl_vector_get (s->x, 10)),
-						gsl_vector_get (s->x, 16),
-						gsl_vector_get (s->x, 17),
-						gsl_vector_get (s->x, 18),
-						gsl_vector_get (s->x, 19),
-
-						s->fval, size);
-
-
-*/				printf ("converged to minimum at %zu:\n", iter);
-
+//#if 0
 				for (int i = 0; i < param.degrees_of_freedom; i++)
 				{
-					if (i == param.degrees_of_freedom - param.line_length)
+/*					if (i == param.degrees_of_freedom - param.line_length)
 					{
 						float ret = 1;
 						for (int i = 0; i < param.lines - 1; i++)
@@ -882,20 +985,116 @@ v1.Kron(v2,result);
 					}
 					else if (i % param.line_length == 0)
 						printf("\n%f, ", abs(gsl_vector_get(s->x, i)));
-					else
+*/
+					if (i % param.line_length == 0)
+						printf("\n");
+//					else
 						printf("%f, ", gsl_vector_get(s->x, i));
 				}
 
+
 				printf("\n f() = %f size = %f\n", s->fval, size);
+/*				for (int i = 0; i < param.number_of_terms; i++) {
+					for (int j = 0; j < param.line_length; j++) {
+						arg[i][j] = gsl_vector_get (s->x, i * param.line_length + j);
+					}
+				}
+*/
+
+//						printf("arg[%d,%d] is %f\n", i, j, arg[i][j]);
+//#endif
+
+
+
+		int condition;
+		condition = 1;
+		for (int i = 0; i < param.number_of_terms; i++)
+		{
+			init_xy(&param, arg[0], s->x, i);
+
+			std::complex<double> xy = sqrt((t * (param.d2 - 1) + 1) / (double)param.d);
+			double value = norm(xy - (param.xt * param.y)(0,0));
+			if (value > 0.1)
+				condition = 0;
+			std::cout << std::endl << "|sqrt(...) - <xi|yi>|" << std::endl << value << std::endl;
+		
+			
+		}
+			
+
+		if (condition == 0)
+		{
+			printf("local minimum. restart\n");
+			status = GSL_CONTINUE; 		
+			for (int i = 0; i < param.degrees_of_freedom; i++)
+			{
+				gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
+			}
+			gsl_vector_set_all (ss, 0.01);
+			gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+		}
+
+	
+
 
 		}
 		if (iter % 1000 == 0)
 			printf("iteration: %zu\n f() = %f\n size = %f\n", iter, s->fval, size);	
 
-		if ((iter > 100000 && s->fval > 0.1) || (iter > 200000 && s->fval > 0.01))
+/*		if ((iter > 100000 && s->fval > 0.1) || (iter > 200000 && s->fval > 0.01))
 			break;
+*/
 	}
 	while (status == GSL_CONTINUE && iter < 100000);
+
+//#if 0
+
+				for (int i = 0; i < param.degrees_of_freedom; i++)
+				{
+/*					if (i == param.degrees_of_freedom - param.line_length)
+					{
+						float ret = 1;
+						for (int i = 0; i < param.lines - 1; i++)
+							ret -= abs(gsl_vector_get (s->x, i * param.line_length)); 
+						printf("\n%f, ", ret);
+					}
+					else if (i % param.line_length == 0)
+						printf("\n%f, ", abs(gsl_vector_get(s->x, i)));
+*/
+					if (i % param.line_length == 0)
+						printf("\n");
+//					else
+						printf("%f, ", gsl_vector_get(s->x, i));
+				}
+
+/*				printf("\n f() = %f size = %f\n", s->fval, size);
+				for (int i = 0; i < param.number_of_terms; i++) {
+					for (int j = 0; j < param.line_length; j++) {
+						arg[i][j] = gsl_vector_get (s->x, i * param.line_length + j);
+					}
+				}
+*/
+//						printf("arg[%d,%d] is %f\n", i, j, arg[i][j]);
+
+//		print condition
+		
+		std::cout << std::endl << "M is" << std::endl << param.M << std::endl;
+
+		for (int i = 0; i < param.number_of_terms; i++)
+		{
+			init_xy(&param, arg[0], s->x, i);
+
+			std::complex<double> xy = sqrt((t * (param.d2 - 1) + 1) / (double)param.d);
+			double value = norm(xy - (param.xt * param.y)(0,0));
+			std::cout << std::endl << "|sqrt(...) - <xi|yi>| = " << value;
+		}
+		std::cout << std::endl;
+
+
+///////////////////////////////////////////////////
+
+
+
 
 	gsl_vector_free(x);
 	gsl_vector_free(ss);
@@ -903,5 +1102,6 @@ v1.Kron(v2,result);
 
 	return status;
 }
+
 
 
