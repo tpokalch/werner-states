@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <iostream>
 #include <Eigen/Dense>
+#include <math.h>
 
 using namespace std;
 
@@ -76,7 +77,8 @@ class MyMatrixXd : public Eigen::MatrixXcd
 			int rowb = M2.rows();
 			int colb = M2.cols();
 			MyMatrixXd result(rowb,colb);
-			std::cout << "assigned matrix is" << std::endl << M2;
+//			std::cout << "assigned matrix is" << std::endl << M2;
+//			printf("this doesn'w work, don't use!\n");
 			for (int i = 0; i < colb; i++)
 			{
 
@@ -153,6 +155,11 @@ typedef struct s_param
 	int d;
 
 	MyMatrixXd Usw;
+//	MyMatrixXd C;
+//	MyMatrixXd S;
+	Eigen::MatrixXcd W[4][4];
+
+
 	double *p;
 	int d2;
 
@@ -177,14 +184,86 @@ typedef struct s_param
 
 	Eigen::MatrixXcd Zero;
 	MyMatrixXd Identity;
+
 }	t_param;
 
+//inits i'th vector;
+void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
+{
+	double t = param->t;
+	if (param->d == 2)
+	{
+	double a = 0.5 * (sqrt((1 + 3 * t) * 0.5) + sqrt(0.5 * (1 - t)));
+	double b = 0.5 * (sqrt((1 + 3 * t) * 0.5) - sqrt(0.5 * (1 - t)));
+	double r = 0.5 * (sqrt((1 + a) * (1 + a) - b * b) + sqrt((1 - a) * (1 - a) - b * b));
+	double s = 0.5 * (sqrt((1 + a) * (1 + a) - b * b) - sqrt((1 - a) * (1 - a) - b * b));
+	param->x(0,0) = r;
+	param->x(1,0) = sqrt(1 - r * r) * polar(1.0, M_PI / 4.0);
 
-void		init_xy(t_param *param, double *arg, const gsl_vector *x, int i)
+	param->y(0,0) = s * polar(1.0, 0.0);
+	param->y(1,0) = sqrt(1 - s * s) * polar(1.0, M_PI / 4.0);
+
+//	now account for the fact that i'th vector is requested
+
+	int j = i / param->d;
+	int k = i % param->d;
+
+//	printf("j, k is %d,%d\n", j, k);
+//	printf("here\n");
+	
+//	std::cout << "x was " << std::endl << param->x << std::endl;
+
+//	assigning form Eigen::Matrix to MyMatrix doesn'twork!!! don't do!
+/*
+	param->x = param->W[j][k] * param->x;
+	param->y = param->W[j][k] * param->y;
+
+*/
+
+
+	//stupid mistake!
+
+	complex<double>x0 = (param->W[j][k] * param->x)(0,0);
+	complex<double>x1 = (param->W[j][k] * param->x)(1,0);
+	param->x(0,0) = x0;
+	param->x(1,0) = x1;
+
+	complex<double>y0 = (param->W[j][k] * param->y)(0,0);
+	complex<double>y1 = (param->W[j][k] * param->y)(1,0);
+	param->y(1,0) = y1;
+	param->y(0,0) = y0;
+
+
+
+
+//	std::cout << "x is " << std::endl << param->x << std::endl;
+
+
+	param->xt = param->x;
+	param->yt = param->y;
+	param->xt.adjointInPlace() ;
+	param->yt.adjointInPlace();
+
+	}
+
+
+}
+
+ 
+
+//	inits i'th vector
+void		init_xy(t_param *param, const gsl_vector *x, int i)
 {
 
+/*
+		init_with_known_solution(param, x, i);
+		return ;
+*/
 
 //#if 0
+		if (param->d == 2)
+		{
+//		PARAMETRISATION FOR d = 2
 
 		int DELETE_ONE_TEST;
 
@@ -223,9 +302,52 @@ void		init_xy(t_param *param, double *arg, const gsl_vector *x, int i)
 //		y(1, 0) = sgn(sin(B)) * polar(abs(sin(B)), A);//	sin(B) * e^iA
 		param->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
 
+//		std::cout << "vector is " << param->x << std::endl;
+		}
 //#endif
 
-#if 0
+//#if 0
+		else if (param->d == 3)
+		{
+
+//		PARAMETRISATION FOR d = 3
+
+//		printf("i is %d\n", i);
+
+		double xal, xbe, xA, xB, xC;
+
+		double yal, ybe, yA, yB, yC;
+
+
+		int DELETE_ONE_TEST;
+
+		xal = gsl_vector_get(x, 0 + param->line_length * i);
+		xbe =  gsl_vector_get(x, 1 + param->line_length * i);
+		xA =  gsl_vector_get(x, 2 + param->line_length * i);
+		xB =  gsl_vector_get(x, 3 + param->line_length * i);
+
+		yal = gsl_vector_get(x, 4 + param->line_length * i);
+		ybe = gsl_vector_get(x, 5 + param->line_length * i);
+		yA = gsl_vector_get(x, 6 + param->line_length * i);
+		yB = gsl_vector_get(x, 7 + param->line_length * i);
+
+
+
+		param->x(0, 0) = cos(xal) * cos(xbe);
+		param->x(1, 0) = polar(1.0, xA) * cos(xal) * sin(xbe);
+		param->x(2, 0) = polar(1.0, xB) * sin(xal);
+
+		param->y(0, 0) = cos(yal) * cos(ybe);
+		param->y(1, 0) = polar(1.0, yA) * cos(yal) * sin(ybe);
+		param->y(2, 0) = polar(1.0, yB) * sin(yal);
+		}
+//#endif 
+
+//#if 0
+
+		else if (param->d == 4)
+		{
+//		PARAMETRISATION FOR d = 4
 		int DELETE_ONE_TEST;
 
 
@@ -263,8 +385,9 @@ void		init_xy(t_param *param, double *arg, const gsl_vector *x, int i)
 		param->y(1, 0) = polar(1.0, yA) * cos(yal) * sin(ybe) * cos(yga);
 		param->y(2, 0) = polar(1.0, yB) * sin(yal) * cos(yga);
 		param->y(3, 0) = polar(1.0, yC) * sin(yga);
+		}
 
-# endif
+//# endif
 
 		param->xt = param->x;
 		param->yt = param->y;
@@ -273,18 +396,22 @@ void		init_xy(t_param *param, double *arg, const gsl_vector *x, int i)
 
 //		std::cout << sqrt((t * (param->d2 - 1) + 1) / param->d) << std::endl;
 	}
-//#endif
+///////////////////////#endif
 
 ////////////////////////////////////////////////////
 
 
-
+/*
 
 template <typename T> double sgn(T val) {
     return (T(0) < val) - (val < T(0));
 }
+
+*/
 /*function to minimize*/
-	//v = the argument of the fucntion
+//	v = the argument of the fucntion
+//	params contain allocated memory for writing the resulting matrices
+
 double	my_f (const gsl_vector *v, void *params)
 {
 
@@ -302,6 +429,7 @@ double	my_f (const gsl_vector *v, void *params)
 	int degrees_of_freedom = p->degrees_of_freedom;
 	int line_length = p->line_length; // length of parameters pertaining to the first term (first weight)
 	int lines = p->lines;
+
 
 	double arg[number_of_terms][line_length];
 	for (int i = 0; i < number_of_terms; i++) {
@@ -363,7 +491,7 @@ double	my_f (const gsl_vector *v, void *params)
 	}
 */
 
-	p->M = /*Eigen::MatrixXcd::*/p->Zero;
+	p->M = p->Zero;
 
 //	std::cout << p->M << std::endl;
 //	std::cout << p->Identity << std::endl;
@@ -375,42 +503,12 @@ double	my_f (const gsl_vector *v, void *params)
 		w = 1 / (double)p->number_of_terms;
 
 //		printf("init xy\n");
-		init_xy(p, arg[0], v, i);
-//		printf("done\n");
-#if 0
 
-		int DELETE_ONE_TEST;
+//		here only 1 pair of vectors is calculated from d^2 pairs.
+		init_xy(p, v, i);
 
-
-		Y = arg[i][0];
-		X = arg[i][1];
-		B = arg[i][2];
-		A = arg[i][3];
-
-//		std::complex<double> x[2];
-//		std::complex<double> y[2];
-
-//		MyMatrixXd x(d,1);
-//		MyMatrixXd y(d,1);
-
-//		for future transposition
-//		MyMatrixXd xt(d,1);
-//		MyMatrixXd yt(d,1);
-
-
-//		init |x> and |y> from parameters A, B, X, Y, alway explicitly
-//		passed to my_f() so that <x|x> = <y|y> = 1
-
-		p->x(0, 0) = cos(Y); //					cos(Y)
-//					magnitude (>0 always)
-//		x(1, 0) = sgn(sin(Y)) * polar(abs(sin(Y)), X);//	sin(Y) * e^iX
-		p->x(1, 0) = sin(Y) * polar(1.0, X);//	sin(Y) * e^iX
-		p->y(0, 0) = cos(B); //					cos(B)
-//		y(1, 0) = sgn(sin(B)) * polar(abs(sin(B)), A);//	sin(B) * e^iA
-		p->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
-
-#endif
-
+//		init_with_known_solution(p, v, i);
+//		printf("here3\n");
 #if 0
 
 /*
@@ -484,8 +582,10 @@ double	my_f (const gsl_vector *v, void *params)
 		p->x.Kron(p->xt, p->Mx);	
 		p->y.Kron(p->yt, p->My);
 
+//		std::cout << "Matrix Mx was" << p->Mx << std::endl;
 		p->Mx *= w;
 
+//		std::cout << "Matrix Mx is" << p->Mx << std::endl;
 /*
 		Mx[i](0,0) = w * Mx[i](0,0);
 		Mx[i](1,0) = w * Mx[i](1,0);
@@ -640,7 +740,8 @@ double	my_f (const gsl_vector *v, void *params)
 //		for (int k = 0; k < 4; k++)
 //		{
 //			std::cout << p->Usw << std::endl << std::endl;
-			p->M -= (t / (double)d) * p->Usw;
+			p->M -= (t / (double)d) * p->Usw + (1-t) / (double)(d*d) * p->Identity;
+
 //		}
 //	}
 
@@ -653,7 +754,7 @@ double	my_f (const gsl_vector *v, void *params)
 //		std::cout << "M was" << std::endl << p->M << std::endl;
 
 //			std::cout << (1 - t) / (double)(d * d) * p->Identity << std::endl << std::endl;
-		p->M-= (1-t) / (double)(d*d) * /* MyMatrixXd::*/p->Identity;
+//		p->M-= (1-t) / (double)(d*d) * p->Identity;
 
 //	}
 //	std::cout << "Matrix is \n" << M <<std::endl;	
@@ -673,6 +774,208 @@ double	my_f (const gsl_vector *v, void *params)
 
 
 
+void	init_Usw(t_param *param)
+{
+
+
+for (int j = 0; j < param->d2; j++)
+{
+	for (int i = 0; i < param->d2; i++)
+	{
+		param->Usw(j, i) = MyMatrixXd::Zero(param->d2, param->d2)(j, i);
+	}
+}
+
+MyMatrixXd Basis(param->d, param->d);
+
+/*	std::cout << "Identity:" << std::endl;
+std::cout << Eigen::MatrixXd::Identity(d, d);
+std::cout << std::endl;
+*/
+
+//	Basis = MyMatrixXd::Identity(d, d);
+
+for (int j = 0; j < param->d; j++)
+{
+	for (int i = 0; i < param->d; i++)
+	{
+		Basis(j, i) = MyMatrixXd::Identity(param->d, param->d)(j, i);
+	}
+}
+
+/*	std::cout << std::endl;
+std::cout << "Basis:" << std::endl;
+std::cout << Basis << std::endl;
+
+*/
+//#if 0
+
+for (int j = 0; j < param->d; j++)
+{
+	for (int i = 0; i < param->d; i++)
+	{
+//			std::cout << "i j =" << std::endl << i << " " << j << std::endl << std::endl;
+
+		MyMatrixXd vi(param->d,1);
+		MyMatrixXd vj(param->d,1);
+		MyMatrixXd vit(param->d,1);
+		MyMatrixXd vjt(param->d,1);
+
+		for (int k = 0; k < param->d; k++)
+			vi(k) = Basis.col(i)(k);
+
+		for (int k = 0; k < param->d; k++)
+			vj(k) = Basis.col(j)(k);
+
+
+//			std::cout << "vj" << std::endl << vj << std::endl;
+
+		vit = vi;
+		vjt = vj;
+		vit.adjointInPlace();
+		vjt.adjointInPlace();
+
+		MyMatrixXd vjvi(param->d2, 1);
+		vj.Kron(vi, vjvi);
+
+//			std::cout << "vjvi" << std::endl << vjvi << std::endl;
+		
+		MyMatrixXd vivjt(param->d2, 1);
+
+		vi.Kron(vj, vivjt);
+		
+		vivjt.adjointInPlace();
+		
+
+//			std::cout << "vivjt" << std::endl << vivjt << std::endl;
+		
+
+		MyMatrixXd term(param->d2, param->d2);
+		vjvi.Kron(vivjt, term);
+
+		param->Usw = param->Usw + term;
+	}
+}
+}
+
+Eigen::MatrixXcd        pow(Eigen::MatrixXcd &M, int power)
+{
+
+        Eigen::MatrixXcd ret = Eigen::MatrixXcd(M.cols(), M.rows());
+        ret = Eigen::MatrixXcd::Identity(M.cols(), M.rows());
+        for (int i = 0; i < power; i++)
+        {
+                ret = ret * M;
+        }
+        return (ret);
+}
+
+
+void	init_weyl(t_param *p)
+{
+//	works for 4x4
+
+//#if 0
+        Eigen::MatrixXcd S;
+        Eigen::MatrixXcd C;
+
+        S = Eigen::MatrixXcd(p->d,p->d);
+        C = Eigen::MatrixXcd(p->d,p->d);
+
+	C = Eigen::MatrixXcd::Zero(p->d, p->d);
+	S = Eigen::MatrixXcd::Zero(p->d, p->d);
+
+ 
+/*
+        C(0,0) = 0;
+        C(1,0) = 0;
+        C(2,0) = 0;
+        C(3,0) = 0;
+
+
+	C(0,1) = 0;
+        C(1,1) = 0;
+        C(2,1) = 0;
+        C(3,1) = 0;
+
+	C(0,2) = 0;
+        C(1,2) = 0;
+        C(2,2) = 0;
+        C(3,2) = 0;
+
+	C(0,3) = 0;
+        C(1,3) = 0;
+        C(2,3) = 0;
+        C(3,3) = 0;
+
+*/
+	for (int i = 0; i < p->d; i++)
+	{
+		C(i ,i) = polar(1.0, 2 * M_PI / p->d * i);
+	} 
+
+	for(int i = 0; i < p->d; i++)
+	{
+			S((i+1) % p->d, i) = 1;
+	}
+/*
+
+        S(0,0) = 0;
+        S(1,0) = 1;
+        S(2,0) = 0;
+        S(3,0) = 0;
+
+
+	S(0,1) = 0;
+        S(1,1) = 0;
+        S(2,1) = 1;
+        S(3,1) = 0;
+
+	S(0,2) = 0;
+        S(1,2) = 0;
+        S(2,2) = 0;
+        S(3,2) = 1;
+
+	S(0,3) = 1;
+        S(1,3) = 0;
+        S(2,3) = 0;
+        S(3,3) = 0;
+*/
+	std::cout << "S is " << endl << S << std::endl;
+	std::cout << "C is " << endl << C << std::endl;
+
+
+
+        for (int i = 0; i < p->d; i++)
+        {
+                for (int j = 0; j < p->d; j++)
+                {
+
+/*
+                        cout << "x is " << endl << x << endl;
+                        cout << "y is " << endl << y << endl;
+*/
+
+                        p->W[i][j] = Eigen::MatrixXcd(p->d,p->d);
+  /*
+                      cout << C.pow(i) << endl << endl;
+                        cout << C.pow(i) << endl << endl;
+
+                        cout << pow(S, j) << endl << endl;
+                        cout << pow(S, j) << endl << endl;
+
+                        cout << pow(C,i) * pow(S,j) << endl << endl;
+*/
+                        p->W[i][j] = pow(C, i) * pow(S, j);
+
+			cout << "W" << i << j << endl;
+                        cout << p->W[i][j] << endl << endl;
+
+		}
+	}
+//#endif
+
+}
 
 
 
@@ -685,7 +988,7 @@ int	main(void)
 {
 	srand(time(0));
 	int d = 2;
-	double t = 1/( (double)(d + 1));
+	double t = 0.5 * 1/( (double) (d + 1));
 //                       t   d
 	double par[2] = {t, (double)d};
 	printf("d = %d, t = %f\n", d, t);
@@ -709,6 +1012,7 @@ printf("here1\n");
   m1(1,0) = 3;
   m1(0,1) = 2;
   m1(1,1) = 4;
+	std::cout << m1 << std::endl << std::endl;
 printf("here2\n");
   MyMatrixXd m2(2,2);
   m2(0,0) = 1;
@@ -796,84 +1100,8 @@ v1.Kron(v2,result);
 
 	std::cout << param.Identity << std::endl;
 
-	for (int j = 0; j < param.d2; j++)
-	{
-		for (int i = 0; i < param.d2; i++)
-		{
-			param.Usw(j, i) = MyMatrixXd::Zero(param.d2, param.d2)(j, i);
-		}
-	}
-
-	MyMatrixXd Basis(param.d, param.d);
-
-/*	std::cout << "Identity:" << std::endl;
-	std::cout << Eigen::MatrixXd::Identity(d, d);
-	std::cout << std::endl;
-*/
-
-//	Basis = MyMatrixXd::Identity(d, d);
-
-	for (int j = 0; j < d; j++)
-	{
-		for (int i = 0; i < d; i++)
-		{
-			Basis(j, i) = MyMatrixXd::Identity(d, d)(j, i);
-		}
-	}
-
-/*	std::cout << std::endl;
-	std::cout << "Basis:" << std::endl;
-	std::cout << Basis << std::endl;
-
-*/
-//#if 0
-
-	for (int j = 0; j < d; j++)
-	{
-		for (int i = 0; i < d; i++)
-		{
-//			std::cout << "i j =" << std::endl << i << " " << j << std::endl << std::endl;
-
-			MyMatrixXd vi(d,1);
-			MyMatrixXd vj(d,1);
-			MyMatrixXd vit(d,1);
-			MyMatrixXd vjt(d,1);
-
-			for (int k = 0; k < d; k++)
-				vi(k) = Basis.col(i)(k);
-
-			for (int k = 0; k < d; k++)
-				vj(k) = Basis.col(j)(k);
-
-
-//			std::cout << "vj" << std::endl << vj << std::endl;
-
-			vit = vi;
-			vjt = vj;
-			vit.adjointInPlace();
-			vjt.adjointInPlace();
-
-			MyMatrixXd vjvi(param.d2, 1);
-			vj.Kron(vi, vjvi);
-
-//			std::cout << "vjvi" << std::endl << vjvi << std::endl;
-			
-			MyMatrixXd vivjt(param.d2, 1);
-
-			vi.Kron(vj, vivjt);
-			
-			vivjt.adjointInPlace();
-			
-
-//			std::cout << "vivjt" << std::endl << vivjt << std::endl;
-			
-
-			MyMatrixXd term(param.d2, param.d2);
-			vjvi.Kron(vivjt, term);
-
-			param.Usw = param.Usw + term;
-		}
-	}
+	init_Usw(&param);
+	init_weyl(&param);
 	std::cout << "Usw := " << std::endl << param.Usw << std::endl << std::endl;
 //#endif
 
@@ -910,6 +1138,8 @@ v1.Kron(v2,result);
 
 */
 
+
+
 	gsl_vector_set (x, 0, 0.17278);
 	gsl_vector_set (x, 1, M_PI / 4.0);
 	gsl_vector_set (x, 2, 0.6936);
@@ -935,8 +1165,12 @@ v1.Kron(v2,result);
 
 
 
-	for (int i = 0; i < param.degrees_of_freedom; i++)
+
+
+/*	for (int i = 0; i < param.degrees_of_freedom; i++)
 		gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
+*/
+
 
 	printf("vector set\n");
 //	gsl_vector_set_all (x, 0);
@@ -946,17 +1180,21 @@ v1.Kron(v2,result);
 
 	/* Set initial step sizes to 1 */
 	ss = gsl_vector_alloc (param.degrees_of_freedom);
-	gsl_vector_set_all (ss, 0.01);
+	gsl_vector_set_all (ss, 0.001);
 
 	/* Initialize method and iterate */
 	minex_func.n = param.degrees_of_freedom;
 	minex_func.f = my_f;
 	minex_func.params = &param;
 
+
 	s = gsl_multimin_fminimizer_alloc (T, param.degrees_of_freedom);
+	printf("gsl multimin fminimizer set\n");
 	gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
 
 	double arg[param.number_of_terms][param.line_length];
+
+	printf("start minimizing\n");
 
 	do
 	{
@@ -967,7 +1205,7 @@ v1.Kron(v2,result);
 			break;
 
 		size = gsl_multimin_fminimizer_size (s);
-		status = gsl_multimin_test_size (size, 1e-8);
+		status = gsl_multimin_test_size (size, 1e-7);
 
 		if (status == GSL_SUCCESS)
 		{
@@ -1008,16 +1246,28 @@ v1.Kron(v2,result);
 
 		int condition;
 		condition = 1;
+
+#if 0
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
-			init_xy(&param, arg[0], s->x, i);
-
+			// this checks all pairwise products <xi|yi> if the code found a local minimum
+			// to check of it may be global
+			init_xy(&param, s->x, i);
+/*
 			std::complex<double> xy = sqrt((t * (param.d2 - 1) + 1) / (double)param.d);
 			double value = norm(xy - (param.xt * param.y)(0,0));
+	*/
+			std::complex<double> xy2 = (t * (param.d2 - 1) + 1) / (double)param.d;
+			double value = norm(xy2 - (param.xt * param.y)(0,0).real() * (param.xt * param.y)(0,0) );
+			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
+
+
 			if (value > 0.1)
 				condition = 0;
+		/*		
+			std::cout << "<xi|yi> = " << param.xt * param.y << std::endl;
 			std::cout << std::endl << "|sqrt(...) - <xi|yi>|" << std::endl << value << std::endl;
-		
+		*/
 			
 		}
 			
@@ -1030,22 +1280,22 @@ v1.Kron(v2,result);
 			{
 				gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
 			}
-			gsl_vector_set_all (ss, 0.01);
+//			gsl_vector_set_all (ss, 0.0001);
 			gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
 		}
-
+#endif
 	
 
 
 		}
-		if (iter % 1000 == 0)
+		if (iter % 2000 == 0)
 			printf("iteration: %zu\n f() = %f\n size = %f\n", iter, s->fval, size);	
 
 /*		if ((iter > 100000 && s->fval > 0.1) || (iter > 200000 && s->fval > 0.01))
 			break;
 */
 	}
-	while (status == GSL_CONTINUE && iter < 100000);
+	while (status == GSL_CONTINUE && iter < 1000000);
 
 //#if 0
 
@@ -1077,18 +1327,118 @@ v1.Kron(v2,result);
 //						printf("arg[%d,%d] is %f\n", i, j, arg[i][j]);
 
 //		print condition
-		
+		std::cout << endl << "t = " << param.t << endl << "d = " << d << endl;
 		std::cout << std::endl << "M is" << std::endl << param.M << std::endl;
 
+		MyMatrixXd x1[param.number_of_terms];
+		MyMatrixXd y1[param.number_of_terms];
+		MyMatrixXd xt1[param.number_of_terms];
+		MyMatrixXd yt1[param.number_of_terms];
+
+//		this function gets the vectors solutions from parameters
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
-			init_xy(&param, arg[0], s->x, i);
+			init_xy(&param, s->x, i);
+			
+			x1[i] =  MyMatrixXd(d, 1);
+			y1[i] =  MyMatrixXd(d, 1);
+			xt1[i] =  MyMatrixXd(d, 1);
+			yt1[i] =  MyMatrixXd(d, 1);
 
+			x1[i] = param.x;
+			y1[i] = param.y;
+			xt1[i] = param.xt;
+			yt1[i] = param.yt;
+
+			std::cout << "x[" << i << "] = " << std::endl << x1[i] << std::endl;
+//			std::cout << "norm(x" << i << ") = " << std::endl << sqrt((x1[i] * xt1[i])(0,0)) << std::endl;
+
+
+			std::cout << "y[" << i << "] = " << std::endl << y1[i] << std::endl << std::endl;
+
+//			std::cout << "norm(y" << i << ") = " << std::endl << sqrt((yt1[i] * y1[i])(0,0)) << std::endl;
+
+//			std::cout << "norm(y" << i << ") = " << std::endl << norm(y1[i]) << std::endl;
+
+
+			std::cout << std::endl;
+
+		}
+
+		printf("weyl generated vectors from x0, y0");
+		for (int i = 0; i < param.number_of_terms; i++)
+		{
+//			Weyl generated vector
+			MyMatrixXd xW = MyMatrixXd(param.d, 1);
+			MyMatrixXd yW = MyMatrixXd(param.d, 1);
+
+
+			int j = i / param.d;
+			int k = i % param.d;
+
+			complex<double>x_0 = (param.W[j][k] * x1[0])(0,0);
+			complex<double>x_1 = (param.W[j][k] * x1[0])(1,0);
+			xW(0,0) = x_0;
+			xW(1,0) = x_1;
+
+			complex<double>y_0 = (param.W[j][k] * y1[0])(0,0);
+			complex<double>y_1 = (param.W[j][k] * y1[0])(1,0);
+			yW(1,0) = y_1;
+			yW(0,0) = y_0;
+
+			std::cout << "xW[" << i << "] = " << std::endl << xW << std::endl;
+//			std::cout << "norm(x" << i << ") = " << std::endl << sqrt((x1[i] * xt1[i])(0,0)) << std::endl;
+
+
+			std::cout << "yW[" << i << " ]= " << std::endl << yW << std::endl << std::endl;
+
+
+			
+		}
+
+	std::cout << std::endl << "Condition 3.2 (1):" << std::endl;
+	for (int i = 0; i < param.number_of_terms; i++)
+		{
+		//	init_xy(&param, s->x, i);
+
+/*
 			std::complex<double> xy = sqrt((t * (param.d2 - 1) + 1) / (double)param.d);
 			double value = norm(xy - (param.xt * param.y)(0,0));
 			std::cout << std::endl << "|sqrt(...) - <xi|yi>| = " << value;
+*/
+			double xy2 = (t * (param.d2 - 1) + 1) / (double)param.d;
+			std::complex<double> xty2 = std::norm((xt1[i] * y1[i])(0,0)); 
+			double value = xy2 - xty2.real();
+			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
+
+//			get vectors for future check of conditions
 		}
+
 		std::cout << std::endl;
+		std::cout << std::endl << "Condition 3.2 (2) and 3.3:" << std::endl;
+
+		for (int i = 0; i < param.number_of_terms; i++)
+		{
+			for (int j = 0; j < param.number_of_terms; j++)
+			{
+				if (i != j)
+				{	
+					double xy = (1 - t) / (double)param.d;
+					std::complex<double> xty = (xt1[i] * y1[j])(0,0);
+//						squared <x|y>
+					xty = conj(xty) * xty;
+//					std::cout << "xti is " << xty << std::endl;
+					double sxty = xty.real();
+//					std::cout << "(1 - t) / d = " << xy << std::endl;
+					std::cout << "|x" << i << " * y" << j << "|^2 - (1-t)/d = " << sxty - xy << std::endl;
+					complex<double> xtxyty = ((xt1[j] * x1[i])(0,0)) * ((yt1[i] * y1[j])(0,0));
+					xtxyty = xtxyty * conj(xtxyty);
+					double sxtxyty = xtxyty.real();
+					std::cout << "|<x" << j << "|x" << i << "> * <y" << i << "|y" << j << ">| - t =  " << sxtxyty - t * t << std::endl;
+				}
+			}
+		}
+		printf("f() = %f\n size = %f\n", s->fval, size);
 
 
 ///////////////////////////////////////////////////
