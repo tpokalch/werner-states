@@ -7,8 +7,7 @@
 #include <math.h>
 
 using namespace std;
-
-
+const std::complex<double> im(0.0f, 1.0f); 
 
 //typedef Eigen::Matrix<std::complex<double>, 2, 2> ComplexMatrix2d;
 //typedef Eigen::Matrix<std::complex<double>, Eigen::Dynamic, Eigen::Dynamic> Eigen::MatrixXcd;
@@ -185,12 +184,17 @@ typedef struct s_param
 	Eigen::MatrixXcd Zero;
 	MyMatrixXd Identity;
 
+	gsl_vector *v;
 }	t_param;
 
 //inits i'th vector;
 void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 {
 	double t = param->t;
+
+	int j = i / param->d;
+	int k = i % param->d;
+
 	if (param->d == 2)
 	{
 	double a = 0.5 * (sqrt((1 + 3 * t) * 0.5) + sqrt(0.5 * (1 - t)));
@@ -204,9 +208,6 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 	param->y(1,0) = sqrt(1 - s * s) * polar(1.0, M_PI / 4.0);
 
 //	now account for the fact that i'th vector is requested
-
-	int j = i / param->d;
-	int k = i % param->d;
 
 //	printf("j, k is %d,%d\n", j, k);
 //	printf("here\n");
@@ -239,12 +240,45 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 //	std::cout << "x is " << std::endl << param->x << std::endl;
 
 
+	}
+
+	else if (param->d == 3)
+	{
+		
+		param->x(0,0) = sqrt(2/3.0);
+		param->x(1, 0) = -1 / sqrt(6);
+		param->x(2, 0) = -1/sqrt(6);
+
+		param->y(0,0) = sqrt(2/3.0);
+		param->y(1, 0) = -1 / sqrt(6);
+		param->y(2, 0) = -1/sqrt(6);
+
+
+		complex<double>x0 = (param->W[j][k] * param->x)(0,0);
+		complex<double>x1 = (param->W[j][k] * param->x)(1,0);
+		complex<double>x2 = (param->W[j][k] * param->x)(2,0);
+
+
+		param->x(0,0) = x0;
+		param->x(1,0) = x1;
+		param->x(2,0) = x2;
+
+		complex<double>y0 = (param->W[j][k] * param->y)(0,0);
+		complex<double>y1 = (param->W[j][k] * param->y)(1,0);
+		complex<double>y2 = (param->W[j][k] * param->y)(2,0);
+
+
+		param->y(1,0) = y1;
+		param->y(0,0) = y0;
+		param->y(2,0) = y2;
+
+	}
+
 	param->xt = param->x;
 	param->yt = param->y;
 	param->xt.adjointInPlace() ;
 	param->yt.adjointInPlace();
 
-	}
 
 
 }
@@ -268,12 +302,7 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 		int DELETE_ONE_TEST;
 
 		double B, A, Y, X, w;
-/*
-		Y = arg[0 + param->line_length * i];
-		X = arg[1 + param->line_length * i];
-		B = arg[2 + param->line_length * i];
-		A = arg[3 + param->line_length * i];
-*/
+
 		Y = gsl_vector_get(x, 0 + param->line_length * i);
 		X = gsl_vector_get(x, 1 + param->line_length * i);
 		B = gsl_vector_get(x, 2 + param->line_length * i);
@@ -303,6 +332,34 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 		param->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
 
 //		std::cout << "vector is " << param->x << std::endl;
+/*
+////		EXPERIMENT
+
+		double B, A, Y, X, w;
+
+		Y = gsl_vector_get(x, 0 + param->line_length * 0);
+		X = gsl_vector_get(x, 1 + param->line_length * 0);
+		B = gsl_vector_get(x, 2 + param->line_length * 0);
+		A = gsl_vector_get(x, 3 + param->line_length * 0);
+
+		param->x(0, 0) = cos(Y);
+		param->x(1, 0) = sin(Y) * polar(1.0, X);
+		param->y(0, 0) = cos(B);
+		param->y(1, 0) = sin(B) * polar(1.0, A);
+
+
+	complex<double>x0 = (param->W[j][k] * param->x)(0,0);
+	complex<double>x1 = (param->W[j][k] * param->x)(1,0);
+	param->x(0,0) = x0;
+	param->x(1,0) = x1;
+
+	complex<double>y0 = (param->W[j][k] * param->y)(0,0);
+	complex<double>y1 = (param->W[j][k] * param->y)(1,0);
+	param->y(1,0) = y1;
+	param->y(0,0) = y0;
+*/
+
+		
 		}
 //#endif
 
@@ -396,6 +453,175 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 
 //		std::cout << sqrt((t * (param->d2 - 1) + 1) / param->d) << std::endl;
 	}
+
+double*	get_angles_from_vector(t_param *p, Eigen::MatrixXcd &x, Eigen::MatrixXcd &y)
+{
+	if (p->d == 2)
+	{
+
+		double *ret = (double *)malloc(sizeof(double) * 2 * 2);
+/*		param->x(0, 0) = cos(Y); //					cos(Y)
+//					magnitude (>0 always)
+//		x(1, 0) = sgn(sin(Y)) * polar(abs(sin(Y)), X);//	sin(Y) * e^iX
+		param->x(1, 0) = sin(Y) * polar(1.0, X);//	sin(Y) * e^iX
+		param->y(0, 0) = cos(B); //					cos(B)
+//		y(1, 0) = sgn(sin(B)) * polar(abs(sin(B)), A);//	sin(B) * e^iA
+		param->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
+*/
+		double cosY = std::abs(x(0, 0));
+		double Y = acos(cosY);
+		complex<double> XsinY = x(1, 0);
+		double X = std::arg(XsinY);
+//		double sinY = std::abs(XsinY);
+
+		double cosB = std::abs(y(0, 0));
+		double B = acos(cosB);
+		complex<double> AsinB = y(1, 0);
+		double A = std::arg(AsinB);
+//		double sinB = std::abs(AsinB);
+
+
+		ret[0] = Y;
+		ret[1] = X;
+		ret[2] = B;
+		ret[3] = A;
+
+		printf("angles are %f,%f,%f,%f\n", Y, X, B, A);
+/*
+		Y = gsl_vector_get(x, 0 + param->line_length * i);
+		X = gsl_vector_get(x, 1 + param->line_length * i);
+		B = gsl_vector_get(x, 2 + param->line_length * i);
+		A = gsl_vector_get(x, 3 + param->line_length * i);
+*/
+
+		return (ret);
+	}
+	if (p->d == 4)
+	{
+		double *ret = (double *)malloc(sizeof(double) * 6 * 2);
+	double sinxga = std::abs(x(3, 0));
+	double sinxga2 = std::norm(x(3, 0));
+	double xga = asin(sinxga);
+	double Xc = std::arg(x(3, 0));
+
+	double cosxga = sqrt(1 - sinxga2);
+	complex<double> Xbsinxal = x(2, 0) / cosxga;
+	
+	double sinxal = std::abs(Xbsinxal);
+	double sinxal2 = std::norm(Xbsinxal);
+	double xal = asin(sinxal);
+	double xB = std::arg(x(2, 0));
+
+	double cosxal = sqrt(1 - sinxal2);
+	complex<double> Xasinxbe = x(1, 0) / (cosxal * cosxga);
+	double sinxbe = std::abs(Xasinxbe);
+	double sinxbe2 = std::norm(Xasinxbe);
+	double xbe = asin(sinxbe);
+	double xA = std::arg(x(1, 0)); // Xa here
+
+///	now same thing for y
+
+	double sinyga = std::abs(y(3, 0));
+	double sinyga2 = std::norm(y(3, 0));
+	double yga = asin(sinyga);
+	double yC = std::arg(y(3, 0));
+
+	double cosyga = sqrt(1 - sinyga2);
+	complex<double> Ybsinyal = y(2, 0) / cosyga;
+	
+	double sinyal = std::abs(Ybsinyal);
+	double sinyal2 = std::norm(Ybsinyal);
+	double yal = asin(sinyal);
+	double yB = std::arg(y(2, 0));
+
+	double cosyal = sqrt(1 - sinyal2);
+	complex<double> Yasinybe = y(1, 0) / (cosyal * cosyga);
+	double sinybe = std::abs(Yasinybe);
+	double sinybe2 = std::norm(Yasinybe);
+	double ybe = asin(sinybe);
+	double yA = std::arg(y(1, 0));
+
+/*
+		xal = gsl_vector_get(x, 0 + param->line_length * i);
+		xbe =  gsl_vector_get(x, 1 + param->line_length * i);
+		xga =  gsl_vector_get(x, 2 + param->line_length * i);
+		xA =  gsl_vector_get(x, 3 + param->line_length * i);
+		xB =  gsl_vector_get(x, 4 + param->line_length * i);
+		xC =  gsl_vector_get(x, 5 + param->line_length * i);
+
+		yal = gsl_vector_get(x, 6 + param->line_length * i);
+		ybe = gsl_vector_get(x, 7 + param->line_length * i);
+		yga = gsl_vector_get(x, 8 + param->line_length * i);
+		yA = gsl_vector_get(x, 9 + param->line_length * i);
+		yB = gsl_vector_get(x, 10 + param->line_length * i);
+		yC = gsl_vector_get(x, 11 + param->line_length * i);
+*/
+
+//	x vector params
+	ret[0] = xal;
+	ret[1] = xbe;
+	ret[2] = xga;
+	ret[3] = xA;
+	ret[4] = xB;
+	ret[5] = Xc;
+
+//	now y
+	ret[6] = yal;
+	ret[7] = ybe;
+	ret[8] = yga;
+	ret[9] = yA;
+	ret[10] = yB;
+	ret[11] = Xc;
+
+	return (ret);
+	}
+}
+
+
+//		this function takes all pairs of vectors written to v and extracts angles.
+//		write ith pair here 	//guess in vector form	//number of the pair of vectors
+void	init_minimizing_guess(t_param *p, Eigen::MatrixXcd *v)
+{
+	int ll = p->line_length;
+	double *vector_params;
+//	for (int j = 0; j < ll; j++)
+//		vector_params[j] = get_angles_form_
+
+//	line_length  = 2 * degrees
+//	ith x vector
+	int number_of_lines = p->number_of_terms;
+	for (int i = 0; i <  number_of_lines; i++)
+	{
+	vector_params = get_angles_from_vector(p, v[2 * i], v[2 * i + 1]);
+	for (int j = 0; j < ll; j++)
+	{
+//								ith line
+		printf("setting param %f\n", vector_params[j]);
+		gsl_vector_set(p->v, j + ll * i, vector_params[j]);
+//		gsl_vector_set(p->x, j + n + param->line_length * i, vector_params[j + n]); // inits y params
+	}
+		printf("\n");
+	}
+
+/*
+	gsl_vector_set (x, 0, 0.17278);		// param for x0
+	gsl_vector_set (x, 1, M_PI / 4.0);	// param for x0
+	gsl_vector_set (x, 2, 0.6936);		// param for y0
+	gsl_vector_set (x, 3, M_PI / 4.0);	// param for y0
+*/
+
+//	for d = 2 structure of p->x
+//	x1_param1, x1_param2, y1_param1, y1_param2,
+//	x2_param1, x2_param2, y2_param1, y2_param2,
+//	x3_param1, x3_param2, y3_param1, y3_param2,
+//	x4_param1, x4_param2, y4_param1, y4_param2.
+	if (p->d == 2 || p->d == 4)
+	{
+		printf("freeing vector params\n");
+		free(vector_params);
+	}
+}
+
 ///////////////////////#endif
 
 ////////////////////////////////////////////////////
@@ -1073,9 +1299,18 @@ v1.Kron(v2,result);
 	printf("alloc\n");
 	printf("degrees of freedom %d\n", param.degrees_of_freedom);
 	x = gsl_vector_alloc(param.degrees_of_freedom);
+	param.v = x;
+//	NOTE: weights are not included now!
 //	structure of x: weight1, x1_param1, x1_param2, ..., y1_param1, y1_param2, ...
 //			weight2, x2_param1, x2_param2, ..., y2_param1, y2_param2, ...
 //			line length = 2 * d - 2
+//	for d = 2 structure of x
+
+//	x1_param1, x1_param2, y1_param1, y1_param2,
+//	x2_param1, x2_param2, y2_param1, y2_param2,
+//	x3_param1, x3_param2, y3_param1, y3_param2,
+//	x4_param1, x4_param2, y4_param1, y4_param2.
+
 	param.line_length = 2 * param.degrees_in_vector; // length of parameters pertaining to the first term (first weight)
 	printf("line length: %d\n", param.line_length);
 	param.lines = param.number_of_terms;
@@ -1094,6 +1329,8 @@ v1.Kron(v2,result);
 	std::cout << param.Zero << std::endl << std::endl;
 	param.Identity = MyMatrixXd(param.d2, param.d2);
 	param.Zero = Eigen::MatrixXcd::Zero(param.d2, param.d2);; 
+
+
 	for (int i = 0; i < param.d2; i++)
 		for (int j = 0; j < param.d2; j++)
 			param.Identity(i, j) = MyMatrixXd::Identity(param.d2, param.d2)(i, j);
@@ -1139,11 +1376,14 @@ v1.Kron(v2,result);
 */
 
 
+//	for d = 2
+//	for t = 0.5 * 1 / (d + 1) !!!
 
-	gsl_vector_set (x, 0, 0.17278);
-	gsl_vector_set (x, 1, M_PI / 4.0);
-	gsl_vector_set (x, 2, 0.6936);
-	gsl_vector_set (x, 3, M_PI / 4.0);
+
+	gsl_vector_set (x, 0, 0.17278);		// param for x0
+	gsl_vector_set (x, 1, M_PI / 4.0);	// param for x0
+	gsl_vector_set (x, 2, 0.6936);		// param for y0
+	gsl_vector_set (x, 3, M_PI / 4.0);	// param for y0
 
 	gsl_vector_set (x, 4, 0.17278);
 	gsl_vector_set (x, 5, 5 * M_PI / 4.0);
@@ -1163,15 +1403,45 @@ v1.Kron(v2,result);
 
 
 
+//		this function takes all pairs of vectors and extracts angles.
+//		i ranges from 0 to 2 * number_of_terms
+//		write ith pair here 	//guess in vector form	//number of the pair of vectors
+
+
+	Eigen::MatrixXcd guess[param.number_of_terms * 2];
+	for (int i = 0; i < param.number_of_terms * 2; i++)
+		guess[i] = Eigen::MatrixXcd(param.d, 1);
+
+
+/*
+	guess[0] << 0.9851137757355578, 0.12155420366246719 + 0.12155420366246718 * im; //x0
+	guess[1] << 0.7671817537135385, 0.4535593438399321 + 0.45355934383993207 * im; //y0
+
+	guess[2] << 0.9851137757355578, -0.12155420366246719 - 0.12155420366246718 * im; //x1
+	guess[3] << 0.7671817537135385 + 0.0* im, -0.4535593438399321 - 0.45355934383993207* im; //y1
+
+	guess[4] << 0.171938 + 0.0 * im, 0.696576 + -0.696576 * im; //x2
+	guess[5] << 0.641381 + 0.0 * im, 0.542509 + -0.542509 * im; //y2
+
+	guess[6] << 0.171938 + 0.0 * im, -0.696576 + 0.696576 * im; //x3
+	guess[7] << 0.641381 + 0.0 * im, -0.542509 + 0.542509 * im; //y3
 
 
 
+	printf("guess inited\n");
 
-/*	for (int i = 0; i < param.degrees_of_freedom; i++)
+
+	init_minimizing_guess(&param, guess);
+*/
+
+
+/*
+	for (int i = 0; i < param.degrees_of_freedom; i++)
 		gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
 */
 
 
+	
 	printf("vector set\n");
 //	gsl_vector_set_all (x, 0);
 	
@@ -1295,7 +1565,7 @@ v1.Kron(v2,result);
 			break;
 */
 	}
-	while (status == GSL_CONTINUE && iter < 1000000);
+	while (status == GSL_CONTINUE && iter < 20000);
 
 //#if 0
 
@@ -1350,11 +1620,23 @@ v1.Kron(v2,result);
 			xt1[i] = param.xt;
 			yt1[i] = param.yt;
 
-			std::cout << "x[" << i << "] = " << std::endl << x1[i] << std::endl;
+			std::cout << "x[" << i << "] = " << std::endl;
+			for (int j = 0; j < param.d; j++)			
+			{
+				std::cout << x1[i](j, 0).real() << " + " << x1[i](j, 0).imag() << " * im" << std::endl;
+			}
+
+			std::cout << "x[" << i << "] = " << std::endl;
+			for (int j = 0; j < param.d; j++)			
+			{
+				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im" << std::endl;
+			}
+
+
 //			std::cout << "norm(x" << i << ") = " << std::endl << sqrt((x1[i] * xt1[i])(0,0)) << std::endl;
 
 
-			std::cout << "y[" << i << "] = " << std::endl << y1[i] << std::endl << std::endl;
+		//	std::cout << "y[" << i << "] = " << std::endl << y1[i].real() << " + " << y[i].imag() << " * im" << std::endl << std::endl;
 
 //			std::cout << "norm(y" << i << ") = " << std::endl << sqrt((yt1[i] * y1[i])(0,0)) << std::endl;
 
@@ -1362,10 +1644,47 @@ v1.Kron(v2,result);
 
 
 			std::cout << std::endl;
+			
 
 		}
+		printf("next guess form\n");
+		for (int i = 0; i < param.number_of_terms; i++)
+		{
 
-		printf("weyl generated vectors from x0, y0");
+			std::cout << "guess[" << 2 * i << "] = " << std::endl;
+			for (int j = 0; j < param.d; j++)			
+			{
+				std::cout << x1[i](j, 0).real() << " + " << x1[i](j, 0).imag() << " * im";
+				if (j != param.d - 1)
+					cout << ", ";
+			}
+			cout << ";" << endl;
+			std::cout << "guess[" << 2 * i + 1 << "] = " << std::endl;
+			for (int j = 0; j < param.d; j++)			
+			{
+				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im" << ", ";
+				if (j != param.d - 1)
+					cout << ", ";
+			}
+			cout << ";" << endl;
+	
+
+//			std::cout << "norm(x" << i << ") = " << std::endl << sqrt((x1[i] * xt1[i])(0,0)) << std::endl;
+
+
+		//	std::cout << "y[" << i << "] = " << std::endl << y1[i].real() << " + " << y[i].imag() << " * im" << std::endl << std::endl;
+
+//			std::cout << "norm(y" << i << ") = " << std::endl << sqrt((yt1[i] * y1[i])(0,0)) << std::endl;
+
+//			std::cout << "norm(y" << i << ") = " << std::endl << norm(y1[i]) << std::endl;
+
+
+			std::cout << std::endl;
+			
+
+		}
+/*
+		printf("weyl generated vectors from x0, y0\n");
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
 //			Weyl generated vector
@@ -1395,7 +1714,7 @@ v1.Kron(v2,result);
 
 			
 		}
-
+*/
 	std::cout << std::endl << "Condition 3.2 (1):" << std::endl;
 	for (int i = 0; i < param.number_of_terms; i++)
 		{
@@ -1410,7 +1729,7 @@ v1.Kron(v2,result);
 			std::complex<double> xty2 = std::norm((xt1[i] * y1[i])(0,0)); 
 			double value = xy2 - xty2.real();
 			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
-
+//			std::cout << std::endl << "|<xi|yi|^2 = " << xty2.real();
 //			get vectors for future check of conditions
 		}
 
