@@ -224,6 +224,7 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 
 	//stupid mistake!
 
+/*
 	complex<double>x0 = (param->W[j][k] * param->x)(0,0);
 	complex<double>x1 = (param->W[j][k] * param->x)(1,0);
 	param->x(0,0) = x0;
@@ -233,7 +234,7 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 	complex<double>y1 = (param->W[j][k] * param->y)(1,0);
 	param->y(1,0) = y1;
 	param->y(0,0) = y0;
-
+*/
 
 
 
@@ -253,7 +254,7 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 		param->y(1, 0) = -1 / sqrt(6);
 		param->y(2, 0) = -1/sqrt(6);
 
-
+/*
 		complex<double>x0 = (param->W[j][k] * param->x)(0,0);
 		complex<double>x1 = (param->W[j][k] * param->x)(1,0);
 		complex<double>x2 = (param->W[j][k] * param->x)(2,0);
@@ -272,7 +273,114 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 		param->y(0,0) = y0;
 		param->y(2,0) = y2;
 
+*/
 	}
+	else if (param->d == 4)
+	{
+/*
+		double r0 = (1 - 1.0 / sqrt(5)) / (2 * sqrt(2 - sqrt(2)));
+		double r1 = (sqrt(2) - 1) * r0;
+		double r_p = 0.5 * sqrt(1.0 + 1.0 / sqrt(5) + sqrt(1.0 / 5.0 + 1.0 / sqrt(5)));
+//		double r_p = 0.5 * (r0 + sqrt(2 - 3 * r0 * r0));
+//		double r_m = 0.5 * (r0 - sqrt(2 - 3 * r0 * r0));
+
+
+		double r_m = 0.5 * sqrt(1.0 + 1.0 / sqrt(5) - sqrt(1.0 / 5.0 + 1.0 / sqrt(5)));
+
+		printf("r0, r1, r_p, r_m %f,%f,%f,%f\n", r0, r1, r_p, r_m);
+
+		printf("r0^2 + r1^2 + r_p^2 + r_m^2 = %f\n", r0 * r0 + r1 * r1 + r_p * r_p + r_m * r_m);
+
+
+		double R = sqrt(r0 * r0 + r1 * r1 + r_p * r_p + r_m * r_m);
+		printf("r0 / R,  %f\n", r0 / R);
+
+
+
+		double a = acos(2 / sqrt(5 + sqrt(5)));
+		double b = asin(2 / sqrt(5));
+		double Th_p = a / 2 + b / 4 + M_PI / 4.0;
+		double Th1 = M_PI / 2.0;
+		double Th_m = -a / 2 + b / 4 + M_PI / 4.0; 
+
+		param->x(0,0) = r0 / R ;
+		param->x(1, 0) = r_p / R* polar(1.0, Th_p);
+		param->x(2, 0) = r1 / R* polar(1.0, Th1);
+		param->x(3, 0) = r_m / R* polar(1.0, Th_m);
+*/
+
+		param->x(0, 0) = 0.485712214091264;
+		param->x(1, 0) = 0.600433696-0.4498963669 * im;
+		param->x(2, 0) = -0.201188586 *im;
+		param->x(3, 0) = -0.3992451-0.0358158471 * im;
+
+
+		param->y(0,0) = param->x(0, 0);
+		param->y(1, 0) = param->x(1, 0);
+		param->y(2, 0) = param->x(2, 0);
+		param->y(3, 0) = param->x(3, 0);
+
+//////////////////////////////////
+/*
+		complex<double>x0 = (param->W[j][k] * param->x)(0,0);
+		complex<double>x1 = (param->W[j][k] * param->x)(1,0);
+		complex<double>x2 = (param->W[j][k] * param->x)(2,0);
+		complex<double>x3 = (param->W[j][k] * param->x)(3,0);
+
+
+		param->x(0,0) = x0;
+		param->x(1,0) = x1;
+		param->x(2,0) = x2;
+		param->x(3,0) = x3;
+
+
+
+		complex<double>y0 = (param->W[j][k] * param->y)(0,0);
+		complex<double>y1 = (param->W[j][k] * param->y)(1,0);
+		complex<double>y2 = (param->W[j][k] * param->y)(2,0);
+		complex<double>y3 = (param->W[j][k] * param->y)(3,0);
+
+
+
+		param->y(0,0) = y0;
+		param->y(1,0) = y1;
+		param->y(2,0) = y2;
+		param->y(3,0) = y3;
+
+*/
+
+
+//		printf("not implemented!\n");
+	}
+
+	complex<double>X[param->d];
+	complex<double>Y[param->d];
+
+	for (int l = 0; l < param->d; l++)
+		X[l] = (param->W[j][k] * param->x)(l, 0);
+	for (int l = 0; l < param->d; l++)
+		param->x(l, 0) = X[l];
+	for (int l = 0; l < param->d; l++)
+		Y[l] = (param->W[j][k] * param->y)(l, 0);
+	for (int l = 0; l < param->d; l++)
+		param->y(l, 0) = Y[l];
+
+	//param->x(0, 0) must be real!
+
+//	printf("change phase\n");
+
+	double phasex = std::arg(param->x(0, 0));
+	for (int l = 0; l < param->d; l++)
+		param->x(l, 0) = param->x(l, 0) * polar(1.0, -phasex);
+
+//	printf("param->x(0, 0).imag() = %f\n", param->x(0, 0).imag()); 
+	double phasey = std::arg(param->y(0, 0));
+	for (int l = 0; l < param->d; l++)
+		param->y(l, 0) = param->y(l, 0) * polar(1.0, -phasey);
+//	printf("known solution :\n");
+
+//	std::cout << "x["<<i<<"] " << "is " << std::endl << param->x << std::endl;
+//	std::cout << "y["<<i<<"] " <<" is " << std::endl << param->y << std::endl;
 
 	param->xt = param->x;
 	param->yt = param->y;
@@ -288,6 +396,9 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 //	inits i'th vector
 void		init_xy(t_param *param, const gsl_vector *x, int i)
 {
+
+
+//	if uncomment set minimizint iterations to 2
 
 /*
 		init_with_known_solution(param, x, i);
@@ -323,11 +434,11 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 //		init |x> and |y> from parameters A, B, X, Y, alway explicitly
 //		passed to my_f() so that <x|x> = <y|y> = 1
 
-		param->x(0, 0) = cos(Y); //					cos(Y)
+		param->x(0, 0) = std::abs(cos(Y)); //					cos(Y)
 //					magnitude (>0 always)
 //		x(1, 0) = sgn(sin(Y)) * polar(abs(sin(Y)), X);//	sin(Y) * e^iX
 		param->x(1, 0) = sin(Y) * polar(1.0, X);//	sin(Y) * e^iX
-		param->y(0, 0) = cos(B); //					cos(B)
+		param->y(0, 0) = std::abs(cos(B)); //					cos(B)
 //		y(1, 0) = sgn(sin(B)) * polar(abs(sin(B)), A);//	sin(B) * e^iA
 		param->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
 
@@ -359,7 +470,26 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 	param->y(0,0) = y0;
 */
 
-		
+
+		if (i == 0)
+		{
+/*
+			param->x(0, 0) = 1.0 + 0.0 * im;
+			param->x(1, 0) = 0.0;
+*/
+//			param->y(1, 0) = std::abs(param->y(1, 0));
+		}
+
+
+/*
+		else if (i == 1)
+		{
+			param->x(1, 0) = std::abs(param->x(1, 0));//misterious free param!
+//			param->x(0, 0) = 0.0 + 0.0 * im;
+//			param->x(1, 0) = 0.0 + 1.0 * im;
+
+		}
+		*/
 		}
 //#endif
 
@@ -456,10 +586,11 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 
 double*	get_angles_from_vector(t_param *p, Eigen::MatrixXcd &x, Eigen::MatrixXcd &y)
 {
+	double *ret = NULL;
 	if (p->d == 2)
 	{
 
-		double *ret = (double *)malloc(sizeof(double) * 2 * 2);
+		ret = (double *)malloc(sizeof(double) * 2 * 2);
 /*		param->x(0, 0) = cos(Y); //					cos(Y)
 //					magnitude (>0 always)
 //		x(1, 0) = sgn(sin(Y)) * polar(abs(sin(Y)), X);//	sin(Y) * e^iX
@@ -494,15 +625,59 @@ double*	get_angles_from_vector(t_param *p, Eigen::MatrixXcd &x, Eigen::MatrixXcd
 		A = gsl_vector_get(x, 3 + param->line_length * i);
 */
 
-		return (ret);
+	}
+	if(p->d == 3)
+	{
+		ret = (double *)malloc(sizeof(double) * 4 * 2);
+//		printf("NOT IMPLEMENTED!!!\n");
+
+/////////////////////////////////////////////////////
+	//////////////////////////////////////////////
+
+		double sinxal = std::abs(x(2, 0));
+		double sinxal2 = std::norm(x(2, 0));
+		double xB = std::arg(x(2, 0));
+		double cosxal = sqrt(1 - sinxal2);
+		double xal = asin(sinxal);
+		complex<double> Xasinxbe = x(1, 0) / cosxal;
+		double xA = std::arg(Xasinxbe);
+		double sinxbe = std::abs(Xasinxbe);
+		double sinxbe2 = std::norm(Xasinxbe);
+		double xbe = asin(sinxbe);
+//		double cosxbe = sqrt(1 - sinxbe2);/		double cosxal = x(0, 0) / cosxbe;
+///////	for y
+
+		double sinyal = std::abs(y(2, 0));
+		double sinyal2 = std::norm(y(2, 0));
+		double yB = std::arg(x(2, 0));
+		double cosyal = sqrt(1 - sinyal2);
+		double yal = asin(sinyal);
+		complex<double> Yasinybe = y(1, 0) / cosyal;
+		double yA = std::arg(Yasinybe);
+		double sinybe = std::abs(Yasinybe);
+		double sinybe2 = std::norm(Yasinybe);
+		double ybe = asin(sinybe);
+//		double cosybe = sqrt(1 - sinybe2);
+//		double cosyal = y(0, 0) / cosybe;
+
+		ret[0] = xal;
+		ret[1] = xbe;
+		ret[2] = xA;
+		ret[3] = xB;
+
+		ret[4] = yal;
+		ret[5] = ybe;
+		ret[6] = yA;
+		ret[7] = yB;
 	}
 	if (p->d == 4)
 	{
-		double *ret = (double *)malloc(sizeof(double) * 6 * 2);
+		printf("here4\n");
+		ret = (double *)malloc(sizeof(double) * 6 * 2);
 	double sinxga = std::abs(x(3, 0));
 	double sinxga2 = std::norm(x(3, 0));
 	double xga = asin(sinxga);
-	double Xc = std::arg(x(3, 0));
+	double xC = std::arg(x(3, 0));
 
 	double cosxga = sqrt(1 - sinxga2);
 	complex<double> Xbsinxal = x(2, 0) / cosxga;
@@ -563,7 +738,7 @@ double*	get_angles_from_vector(t_param *p, Eigen::MatrixXcd &x, Eigen::MatrixXcd
 	ret[2] = xga;
 	ret[3] = xA;
 	ret[4] = xB;
-	ret[5] = Xc;
+	ret[5] = xC;
 
 //	now y
 	ret[6] = yal;
@@ -571,10 +746,15 @@ double*	get_angles_from_vector(t_param *p, Eigen::MatrixXcd &x, Eigen::MatrixXcd
 	ret[8] = yga;
 	ret[9] = yA;
 	ret[10] = yB;
-	ret[11] = Xc;
+	ret[11] = yC;
 
-	return (ret);
+	printf("xal, xbe, xga, Xa, Xb, Xc: %f, %f, %f, %f, %f, %f\n", xal, xbe, xga, xA, xB, xC);
+	printf("yal, ybe, yga, Ya, Yb, Yc: %f, %f, %f, %f, %f, %f\n", yal, ybe, yga, yA, yB, yC);
+
+
 	}
+	return (ret);
+
 }
 
 
@@ -584,6 +764,7 @@ void	init_minimizing_guess(t_param *p, Eigen::MatrixXcd *v)
 {
 	int ll = p->line_length;
 	double *vector_params;
+	printf("here\n");
 //	for (int j = 0; j < ll; j++)
 //		vector_params[j] = get_angles_form_
 
@@ -593,11 +774,14 @@ void	init_minimizing_guess(t_param *p, Eigen::MatrixXcd *v)
 	for (int i = 0; i <  number_of_lines; i++)
 	{
 	vector_params = get_angles_from_vector(p, v[2 * i], v[2 * i + 1]);
+	printf("here5\n");
 	for (int j = 0; j < ll; j++)
 	{
+		printf("i j %d, %d\n", i, j);
 //								ith line
-		printf("setting param %f\n", vector_params[j]);
+//		printf("setting param %f\n", vector_params[j]);
 		gsl_vector_set(p->v, j + ll * i, vector_params[j]);
+		printf("here7\n");
 //		gsl_vector_set(p->x, j + n + param->line_length * i, vector_params[j + n]); // inits y params
 	}
 		printf("\n");
@@ -615,7 +799,7 @@ void	init_minimizing_guess(t_param *p, Eigen::MatrixXcd *v)
 //	x2_param1, x2_param2, y2_param1, y2_param2,
 //	x3_param1, x3_param2, y3_param1, y3_param2,
 //	x4_param1, x4_param2, y4_param1, y4_param2.
-	if (p->d == 2 || p->d == 4)
+	if (p->d == 2 || p->d == 3 || p->d == 4)
 	{
 		printf("freeing vector params\n");
 		free(vector_params);
@@ -640,13 +824,11 @@ template <typename T> double sgn(T val) {
 
 double	my_f (const gsl_vector *v, void *params)
 {
-
 	t_param *p = (t_param *)params;
 
 	double t = p->t;
 	double d = p->d;
 	int d2 = p->d2;
-
 
 	int degrees_in_vector = p->degrees_in_vector;
 	int number_of_terms = p->number_of_terms;
@@ -707,16 +889,7 @@ double	my_f (const gsl_vector *v, void *params)
 //	Eigen::MatrixXcd M(d2,d2);
 
 
-
-/*	for (int i = 0; i < d2; i++)
-	{
-		for (int j = 0; j < d2; j++)
-		{
-			M(i, j) = 0;
-		}
-	}
-*/
-
+//	printf("here\n");
 	p->M = p->Zero;
 
 //	std::cout << p->M << std::endl;
@@ -728,12 +901,11 @@ double	my_f (const gsl_vector *v, void *params)
 //		w = abs(arg[i][0]);
 		w = 1 / (double)p->number_of_terms;
 
-//		printf("init xy\n");
+//		printf("init xy number %d\n", i);
 
 //		here only 1 pair of vectors is calculated from d^2 pairs.
 		init_xy(p, v, i);
 
-//		init_with_known_solution(p, v, i);
 //		printf("here3\n");
 #if 0
 
@@ -1214,13 +1386,16 @@ int	main(void)
 {
 	srand(time(0));
 	int d = 2;
-	double t = 0.5 * 1/( (double) (d + 1));
+	double eps = 0.0001;
+	double t =  0.5 * 1/( (double) (d + 1))/*0.2*/;
 //                       t   d
+/*
 	double par[2] = {t, (double)d};
-	printf("d = %d, t = %f\n", d, t);
+*/
+	printf("d = %d, t = %.20f\n", d, t);
 
 	const gsl_multimin_fminimizer_type *T =
-		gsl_multimin_fminimizer_nmsimplex2;
+		gsl_multimin_fminimizer_nmsimplex2rand;
 	gsl_multimin_fminimizer *s = NULL;
 	gsl_vector *ss, *x;
 	gsl_multimin_function minex_func;
@@ -1372,14 +1547,14 @@ v1.Kron(v2,result);
 	gsl_vector_set (x, 17, -5 * M_PI / 4.0);
 	gsl_vector_set (x, 18, 0.8745);
 	gsl_vector_set (x, 19, -5 * M_PI / 4.0);
-
 */
+
 
 
 //	for d = 2
 //	for t = 0.5 * 1 / (d + 1) !!!
 
-
+/*
 	gsl_vector_set (x, 0, 0.17278);		// param for x0
 	gsl_vector_set (x, 1, M_PI / 4.0);	// param for x0
 	gsl_vector_set (x, 2, 0.6936);		// param for y0
@@ -1401,7 +1576,7 @@ v1.Kron(v2,result);
 	gsl_vector_set (x, 14, 0.8745);
 	gsl_vector_set (x, 15, -5 * M_PI / 4.0);
 
-
+*/
 
 //		this function takes all pairs of vectors and extracts angles.
 //		i ranges from 0 to 2 * number_of_terms
@@ -1413,32 +1588,182 @@ v1.Kron(v2,result);
 		guess[i] = Eigen::MatrixXcd(param.d, 1);
 
 
+//	for d = 2, t = 0.5 / (d+1)
+
 /*
-	guess[0] << 0.9851137757355578, 0.12155420366246719 + 0.12155420366246718 * im; //x0
-	guess[1] << 0.7671817537135385, 0.4535593438399321 + 0.45355934383993207 * im; //y0
 
-	guess[2] << 0.9851137757355578, -0.12155420366246719 - 0.12155420366246718 * im; //x1
-	guess[3] << 0.7671817537135385 + 0.0* im, -0.4535593438399321 - 0.45355934383993207* im; //y1
+guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
+guess[1] << 0.86602540378416570377 + 0.00000000000000000000 * im, 0.50000000000047273296 + 0.00000000000000000000 * im;
 
-	guess[4] << 0.171938 + 0.0 * im, 0.696576 + -0.696576 * im; //x2
-	guess[5] << 0.641381 + 0.0 * im, 0.542509 + -0.542509 * im; //y2
+guess[2] << 0.22831118948877446306 + 0.00000000000000000000 * im, 0.71111332912290403652 + -0.66497506261360017632 * im;
+guess[3] << 0.64549722436762535516 + 0.00000000000000000000 * im, 0.13338316976929021074 + -0.75202544063082621406 * im;
 
-	guess[6] << 0.171938 + 0.0 * im, -0.696576 + 0.696576 * im; //x3
-	guess[7] << 0.641381 + 0.0 * im, -0.542509 + 0.542509 * im; //y3
+guess[4] << 0.94027515832131147722 + 0.00000000000000000000 * im, -0.33819389032882735124 + -0.03882678441599057145 * im;
+guess[5] << 0.64549722436808332215 + 0.00000000000000000000 * im, -0.76368819500914941756 + -0.01066180738747262748 * im;
+
+guess[6] << 0.25250074732206195804 + 0.00000000000000000000 * im, 0.61639494294341312663 + 0.74585564750532440392 * im;
+guess[7] << 0.64549722436801748593 + 0.00000000000000000000 * im, -0.04051536800939155303 + 0.76268724801733034369 * im;
 
 
+*/
+//d = 2	// t = 1 / (d + 1)
+/*
+guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
+guess[1] << 0.99999999367380554283 + 0.00000000000000000000 * im, 0.00011248283829210840 + 0.00000000000000000000 * im;
+
+guess[2] << 0.57725842734339416484 + 0.00000000000000000000 * im, 0.81656151517263630968 + 0.00000000000000000000 * im;
+guess[3] << 0.57735027283339368509 + 0.00000000000000000000 * im, 0.81649657835119304750 + 0.00000000000338500860 * im;
+
+guess[4] << 0.57739618463103348223 + 0.00000000000000000000 * im, -0.40818334848342413546 + -0.70710678118257719316 * im;
+guess[5] << 0.57735027284097051314 + 0.00000000000000000000 * im, -0.40834570215653265279 + -0.70705052859095252060 * im;
+
+guess[6] << 0.57739618463403541426 + 0.00000000000000000000 * im, -0.40818334848031445627 + 0.70710678118192105135 * im;
+guess[7] << 0.57735027284868301045 + 0.00000000000000000000 * im, -0.40834570215230908685 + 0.70705052858709394048 * im;
+*/
+/*
+guess[0] << 0.686330 + 0.000000 * im, -0.183671 + 0.703716 * im;
+guess[1] << 0.686327 + 0.000000 * im, -0.183678 + 0.703717 * im;
+
+guess[2] << 0.987190 + 0.000000 * im, -0.036161 + -0.155398 * im;
+guess[3] << 0.987190 + 0.000000 * im, -0.036155 + -0.155400 * im;
+
+guess[4] << 0.583574 + 0.000000 * im, 0.805660 + -0.101754 * im;
+guess[5] << 0.583579 + 0.000000 * im, 0.805656 + -0.101757 * im;
+
+guess[6] << 0.462438 + 0.000000 * im, -0.666911 + -0.584278 * im;
+guess[7] << 0.462437 + 0.000000 * im, -0.666920 + -0.584269 * im;
+*/
+
+
+
+/*
+guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
+guess[1] << 0.86602540378691417189 + 0.00000000000000000000 * im, -0.35258688501728469022 + 0.35451726122929511087 * im;
+
+guess[2] << 0.19060670241694005478 + 0.00000000000000000000 * im, -0.35583460033892377883 + 0.91490481592096706276 * im;
+guess[3] << 0.64549722436931178393 + 0.00000000000000000000 * im, -0.00897429900840247124 + 0.76370988947952100911 * im;
+
+guess[4] << 0.90885382340961506920 + 0.00000000000000000000 * im, 0.41620926780469302830 + -0.02746949339186330330 * im;
+guess[5] << 0.64549722436621725929 + 0.00000000000000000000 * im, 0.59128703051856745798 + -0.48343870436286351389 * im;
+
+guess[6] << 0.37101726734477979974 + 0.00000000000000000000 * im, -0.83675060956037661253 + -0.40273391306463196537 * im;
+guess[7] << 0.64549722436648815371 + 0.00000000000000000000 * im, -0.10926778578411425191 + -0.75590600230782434288 * im;
+*/
+
+/*
+guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
+guess[1] << 0.86602540378526204901 + 0.00000000000000000000 * im, -0.27611587396076742174 + 0.41684532400574614286 * im;
+
+guess[2] << 0.30561844789246245258 + 0.00000000000000000000 * im, -0.94839410170145033163 + -0.08453397048347624509 * im;
+guess[3] << 0.64549722436874978904 + 0.00000000000000000000 * im, -0.43079357592479100569 + -0.63067442335500745187 * im;
+
+guess[4] << 0.20354056624078911697 + 0.00000000000000000000 * im, -0.02165595409345681330 + 0.97882698039371640597 * im;
+guess[5] << 0.64549722436665424308 + 0.00000000000000000000 * im, 0.34297692325718270867 + 0.68242227648867215262 * im;
+
+guess[6] << 0.93014439857530939459 + 0.00000000000000000000 * im, 0.31635367472322617477 + -0.18641821340225075976 * im;
+guess[7] << 0.64549722436702650086 + 0.00000000000000000000 * im, 0.45826497097502705280 + -0.61100454148207639093 * im;
+*/
+
+//#if 0
+//d = 4, t = 1/(d + 1)
+
+/*
+
+guess[0] << 0.48571220566371603455 + 0.00000000000000000000 * im, 0.60043410989507439712 + -0.44989580508021820293 * im, -0.00000022134485245055 + -0.20118866436074883675 * im, -0.39924505078166983019 + -0.03581631296003146697 * im;
+guess[1] << 0.48571220121010350024 + 0.00000000000000000000 * im, 0.60043410581348644062 + -0.44989581300127767793 * im, -0.00000022237934508396 + -0.20118866594721568353 * im, -0.39924505331953308307 + -0.03581630508201213980 * im;
+
+guess[2] << 0.40084839004280192754 + 0.00000000000000000000 * im, -0.48376950530221196622 + 0.04339815948262136514 * im, -0.55783371497324985011 + 0.50174587981883667087 * im, 0.01797588775844632253 + 0.20038393068439400158 * im;
+guess[3] << 0.40084839076185951878 + 0.00000000000000000000 * im, -0.48376950778052724145 + 0.04339816116647154942 * im, -0.55783370775348195547 + 0.50174588283297227864 * im, 0.01797589266778668385 + 0.20038393500912993206 * im;
+
+guess[4] << 0.20118874233297490139 + 0.00000000000000000000 * im, 0.03581622211567773995 + -0.39924509546129000048 * im, 0.00000002041508061884 + 0.48571219018709288484 * im, 0.44989592627981206396 + 0.60043398118563251487 * im;
+guess[5] << 0.20118874107775422400 + 0.00000000000000000000 * im, 0.03581624656015507807 + -0.39924509218375048292 * im, -0.00000001141238429109 + 0.48571218941213500919 * im, 0.44989589033705501553 + 0.60043400988566419940 * im;
+
+guess[6] << 0.75028487689048017906 + 0.00000000000000000000 * im, 0.12063960664885407803 + -0.16100589317735533590 * im, -0.29802940657205773123 + -0.26806351147867168994 * im, 0.38870266112947454706 + 0.29124982238982549676 * im;
+guess[7] << 0.75028487820865574776 + 0.00000000000000000000 * im, 0.12063960939808400508 + -0.16100589136249779387 * im, -0.29802940809578004622 + -0.26806350792765271107 * im, 0.38870266238507222845 + 0.29124981889200313168 * im;
+
+guess[8] << 0.48571219380388774844 + 0.00000000000000000000 * im, 0.44989590371547083514 + 0.60043412756094016736 * im, 0.00000004305203688834 + 0.20118835371355753283 * im, -0.03581610949384984866 + 0.39924510228822884805 * im;
+guess[9] << 0.48571219400042237035 + 0.00000000000000000000 * im, 0.44989590336042289964 + 0.60043412575145038712 * im, 0.00000004278645691197 + 0.20118835338460328011 * im, -0.03581610840153907904 + 0.39924510543431307452 * im;
+
+guess[10] << 0.40084848092066294178 + 0.00000000000000000000 * im, -0.04339784949562915106 + -0.48376969158366989188 * im, 0.55783375004053603607 + -0.50174560122379563420 * im, 0.20038394399166689630 + -0.01797613602590326237 * im;
+guess[11] << 0.40084848492557317856 + 0.00000000000000000000 * im, -0.04339784756032747520 + -0.48376968884190801878 * im, 0.55783375282198799372 + -0.50174559875668145459 * im, 0.20038394181292937257 + -0.01797613201319174167 * im;
+
+guess[12] << 0.20118853364528579974 + 0.00000000000000000000 * im, 0.39924487530314201056 + 0.03581647033650977446 * im, 0.00000008571153665469 + -0.48571222335154873306 * im, 0.60043442196400753641 + -0.44989557114302441976 * im;
+guess[13] << 0.20118853178127371617 + 0.00000000000000000000 * im, 0.39924487794770807669 + 0.03581645634914758236 * im, 0.00000007107952503248 + -0.48571222481774622981 * im, 0.60043441163302080366 + -0.44989558294820253259 * im;
+
+guess[14] << 0.75028485626045227086 + 0.00000000000000000000 * im, 0.16100598148416428446 + 0.12063979314791220543 * im, 0.29802912377355567086 + 0.26806342513827419172 * im, 0.29124998594534068364 + -0.38870276031245887260 * im;
+guess[15] << 0.75028485920200982395 + 0.00000000000000000000 * im, 0.16100597785790843330 + 0.12063979507336797248 * im, 0.29802912023228111948 + 0.26806343003264371250 * im, 0.29124998573825428005 + -0.38870275503405943285 * im;
+
+guess[16] << 0.48571220269765696953 + 0.00000000000000000000 * im, -0.60043436697082652742 + 0.44989556077439513126 * im, 0.00000009117750315309 + -0.20118855605868582459 * im, 0.39924499496206200533 + 0.03581634285045333377 * im;
+guess[17] << 0.48571220505380680033 + 0.00000000000000000000 * im, -0.60043436085072376951 + 0.44989556934372321173 * im, 0.00000008441651774008 + -0.20118855306505578628 * im, 0.39924499397957158298 + 0.03581633362409541999 * im;
+
+guess[18] << 0.40084832354166383128 + 0.00000000000000000000 * im, 0.48376955546817029807 + -0.04339784639564987778 * im, -0.55783373699014804359 + 0.50174587841619999740 * im, -0.01797614518618950719 + -0.20038392953626152360 * im;
+guess[19] << 0.40084832273510950795 + 0.00000000000000000000 * im, 0.48376955301968593837 + -0.04339784754631269281 * im, -0.55783373848238715365 + 0.50174587947962356882 * im, -0.01797614128373924494 + -0.20038393034487450572 * im;
+
+guess[20] << 0.20118848068884656599 + 0.00000000000000000000 * im, -0.03581604923688611053 + 0.39924525986914244369 * im, 0.00000031345099763014 + 0.48571222007887515648 * im, -0.44989597021201127580 + -0.60043391274988844319 * im;
+guess[21] << 0.20118848197181199433 + 0.00000000000000000000 * im, -0.03581603455022940724 + 0.39924526139794436208 * im, 0.00000031960346425786 + 0.48571221684646787020 * im, -0.44989598155194249207 + -0.60043390629749049392 * im;
+
+guess[22] << 0.75028474675292156082 + 0.00000000000000000000 * im, -0.12063972844241556415 + 0.16100607483953649490 * im, -0.29802921571501156395 + -0.26806344955075805947 * im, -0.38870281269331680152 + -0.29125005678206761228 * im;
+guess[23] << 0.75028474365869823881 + 0.00000000000000000000 * im, -0.12063973233339553293 + 0.16100607753154846935 * im, -0.29802921026336487431 + -0.26806345565894890148 * im, -0.38870281080943097640 + -0.29125006412404236267 * im;
+
+guess[24] << 0.48571225269390266854 + 0.00000000000000000000 * im, -0.44989568139662694524 + -0.60043406932338205806 * im, -0.00000007588617055007 + 0.20118877391789016795 * im, 0.03581612501103648843 + -0.39924515560999279673 * im;
+guess[25] << 0.48571225353689073678 + 0.00000000000000000000 * im, -0.44989567471439811941 + -0.60043407527298398030 * im, -0.00000008083198722739 + 0.20118877036222962418 * im, 0.03581612188749126041 + -0.39924515523865272693 * im;
+
+guess[26] << 0.40084836728471889833 + 0.00000000000000000000 * im, 0.04339787420051807731 + 0.48376943806260669367 * im, 0.55783392561723277314 + -0.50174579505389627077 * im, -0.20038381895738816008 + 0.01797596820465803893 * im;
+guess[27] << 0.40084836924778310951 + 0.00000000000000000000 * im, 0.04339787375129934566 + 0.48376943542497313766 * im, 0.55783392423412647698 + -0.50174579944222597039 * im, -0.20038381444482139537 + 0.01797596723521816334 * im;
+
+guess[28] << 0.20118859529337815295 + 0.00000000000000000000 * im, -0.39924505716996455673 + -0.03581633111751213877 * im, 0.00000002314895719161 + -0.48571222295692917381 * im, -0.60043415991665505249 + 0.44989574342277172114 * im;
+guess[29] << 0.20118859448170073323 + 0.00000000000000000000 * im, -0.39924505621703987313 + -0.03581633295774085818 * im, 0.00000002263994770294 + -0.48571222407816527777 * im, -0.60043416240736358080 + 0.44989573995026904685 * im;
+
+guess[30] << 0.75028494390333944075 + 0.00000000000000000000 * im, -0.16100577850080066700 + -0.12063966592206552819 * im, 0.29802919808529487744 + 0.26806336677886088982 * im, -0.29124996985642465086 + 0.38870271003168499480 * im;
+guess[31] << 0.75028494303019888090 + 0.00000000000000000000 * im, -0.16100577359455892079 + -0.12063966657294182550 * im, 0.29802920358248946586 + 0.26806337041367173102 * im, -0.29124996718138052021 + 0.38870270883009400142 * im;
+*/
+
+//d = 3??
+
+/*
+
+guess[0] << 0.81649658092772603446 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im;
+guess[1] << 0.81649658092772603446 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im;
+
+guess[2] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.81649658092772603446 + -0.00000000000000009999 * im, 0.40824829046386307274 + 0.00000000000000005000 * im;
+guess[3] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.81649658092772603446 + -0.00000000000000009999 * im, 0.40824829046386307274 + 0.00000000000000005000 * im;
+
+guess[4] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046386307274 + 0.00000000000000005000 * im, -0.81649658092772603446 + -0.00000000000000009999 * im;
+guess[5] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046386307274 + 0.00000000000000005000 * im, -0.81649658092772603446 + -0.00000000000000009999 * im;
+
+guess[6] << 0.81649658092772603446 + 0.00000000000000000000 * im, 0.20412414523193145310 + -0.35355339059327389739 * im, 0.20412414523193173066 + 0.35355339059327367535 * im;
+guess[7] << 0.81649658092772603446 + 0.00000000000000000000 * im, 0.20412414523193145310 + -0.35355339059327389739 * im, 0.20412414523193173066 + 0.35355339059327367535 * im;
+
+guess[8] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046386296172 + -0.70710678118654768376 * im, -0.20412414523193167515 + -0.35355339059327367535 * im;
+guess[9] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046386296172 + -0.70710678118654768376 * im, -0.20412414523193167515 + -0.35355339059327367535 * im;
+
+guess[10] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.20412414523193150862 + 0.35355339059327389739 * im, 0.40824829046386329479 + 0.70710678118654735069 * im;
+guess[11] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.20412414523193150862 + 0.35355339059327389739 * im, 0.40824829046386329479 + 0.70710678118654735069 * im;
+
+guess[12] << 0.81649658092772603446 + 0.00000000000000000000 * im, 0.20412414523193175842 + 0.35355339059327373086 * im, 0.20412414523193117555 + -0.35355339059327400841 * im;
+guess[13] << 0.81649658092772603446 + 0.00000000000000000000 * im, 0.20412414523193175842 + 0.35355339059327373086 * im, 0.20412414523193117555 + -0.35355339059327400841 * im;
+
+guess[14] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046386335030 + 0.70710678118654735069 * im, -0.20412414523193123106 + 0.35355339059327400841 * im;
+guess[15] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046386335030 + 0.70710678118654735069 * im, -0.20412414523193123106 + 0.35355339059327400841 * im;
+
+guess[16] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.20412414523193170290 + -0.35355339059327373086 * im, 0.40824829046386240661 + -0.70710678118654790580 * im;
+guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.20412414523193170290 + -0.35355339059327373086 * im, 0.40824829046386240661 + -0.70710678118654790580 * im;
+
+*/
 
 	printf("guess inited\n");
 
+//	doesn't work for d = 4 // works now
+//	init_minimizing_guess(&param, guess);
 
-	init_minimizing_guess(&param, guess);
-*/
+//#endif
 
 
-/*
+
 	for (int i = 0; i < param.degrees_of_freedom; i++)
 		gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
-*/
+
+
 
 
 	
@@ -1449,8 +1774,8 @@ v1.Kron(v2,result);
 
 
 	/* Set initial step sizes to 1 */
-	ss = gsl_vector_alloc (param.degrees_of_freedom);
-	gsl_vector_set_all (ss, 0.001);
+	ss = gsl_vector_alloc(param.degrees_of_freedom);
+	gsl_vector_set_all (ss, 0.000001);
 
 	/* Initialize method and iterate */
 	minex_func.n = param.degrees_of_freedom;
@@ -1464,8 +1789,16 @@ v1.Kron(v2,result);
 
 	double arg[param.number_of_terms][param.line_length];
 
-	printf("start minimizing\n");
+   	FILE *fptr;
 
+   // use appropriate location if you are using MacOS or Linux
+	fptr = fopen("./program.txt","w");
+
+	printf("start minimizing\n");
+	printf("CHECK t = %.20f, f = %.20f\n", t, my_f(x, &param));
+	int N =/* lround(1/(eps * (d + 1))) / 2*/ 1;
+	for (int i = 0; i < N; i++)
+	{
 	do
 	{
 		iter++;
@@ -1475,13 +1808,16 @@ v1.Kron(v2,result);
 			break;
 
 		size = gsl_multimin_fminimizer_size (s);
-		status = gsl_multimin_test_size (size, 1e-7);
+		status = gsl_multimin_test_size (size, 1e-11);
 
 		if (status == GSL_SUCCESS)
 		{
+//#if 0
 				printf ("converged to minimum at %zu:\n", iter);
 
 //#if 0
+
+//				printf("print params\n");
 				for (int i = 0; i < param.degrees_of_freedom; i++)
 				{
 /*					if (i == param.degrees_of_freedom - param.line_length)
@@ -1502,6 +1838,7 @@ v1.Kron(v2,result);
 
 
 				printf("\n f() = %f size = %f\n", s->fval, size);
+//#endif
 /*				for (int i = 0; i < param.number_of_terms; i++) {
 					for (int j = 0; j < param.line_length; j++) {
 						arg[i][j] = gsl_vector_get (s->x, i * param.line_length + j);
@@ -1517,23 +1854,31 @@ v1.Kron(v2,result);
 		int condition;
 		condition = 1;
 
-#if 0
+//#if 0
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
 			// this checks all pairwise products <xi|yi> if the code found a local minimum
 			// to check of it may be global
 			init_xy(&param, s->x, i);
+
 /*
-			std::complex<double> xy = sqrt((t * (param.d2 - 1) + 1) / (double)param.d);
-			double value = norm(xy - (param.xt * param.y)(0,0));
-	*/
 			std::complex<double> xy2 = (t * (param.d2 - 1) + 1) / (double)param.d;
 			double value = norm(xy2 - (param.xt * param.y)(0,0).real() * (param.xt * param.y)(0,0) );
 			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
+*/
 
-
+///////////////////////////////////////////////////////////////////
+			double xy2 = (t * (param.d2 - 1) + 1) / (double)param.d;
+			std::complex<double> xty2 = std::norm((param.xt * param.y)(0,0)); 
+			double value = xy2 - xty2.real();
+			std::cout << "(...) - |<xi|yi>|^2 = " << value<< std::endl ;
+			std::cout  << "|<xi|yi|^2 = " << xty2.real()<< std::endl ;
+////////////////////////////////
 			if (value > 0.1)
 				condition = 0;
+
+
+
 		/*		
 			std::cout << "<xi|yi> = " << param.xt * param.y << std::endl;
 			std::cout << std::endl << "|sqrt(...) - <xi|yi>|" << std::endl << value << std::endl;
@@ -1553,21 +1898,29 @@ v1.Kron(v2,result);
 //			gsl_vector_set_all (ss, 0.0001);
 			gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
 		}
-#endif
+//#endif
 	
 
 
 		}
-		if (iter % 2000 == 0)
-			printf("iteration: %zu\n f() = %f\n size = %f\n", iter, s->fval, size);	
-
-/*		if ((iter > 100000 && s->fval > 0.1) || (iter > 200000 && s->fval > 0.01))
-			break;
-*/
-	}
-	while (status == GSL_CONTINUE && iter < 20000);
 
 //#if 0
+		if (iter % 4000 == 0)
+			printf("iteration: %zu\n f() = %.30f\n size = %.30f\n", iter, s->fval, size);	
+
+//#endif
+/*
+		if ((iter > 100000 && s->fval > 0.1) || (iter > 200000 && s->fval > 0.01))
+			break;
+*/
+
+	}
+	while (status == GSL_CONTINUE && iter < 2000000);
+
+//#if 0
+
+//		print paramterisation params
+#if 0
 
 				for (int i = 0; i < param.degrees_of_freedom; i++)
 				{
@@ -1586,6 +1939,7 @@ v1.Kron(v2,result);
 //					else
 						printf("%f, ", gsl_vector_get(s->x, i));
 				}
+#endif
 
 /*				printf("\n f() = %f size = %f\n", s->fval, size);
 				for (int i = 0; i < param.number_of_terms; i++) {
@@ -1597,9 +1951,10 @@ v1.Kron(v2,result);
 //						printf("arg[%d,%d] is %f\n", i, j, arg[i][j]);
 
 //		print condition
+/*
 		std::cout << endl << "t = " << param.t << endl << "d = " << d << endl;
 		std::cout << std::endl << "M is" << std::endl << param.M << std::endl;
-
+*/
 		MyMatrixXd x1[param.number_of_terms];
 		MyMatrixXd y1[param.number_of_terms];
 		MyMatrixXd xt1[param.number_of_terms];
@@ -1620,13 +1975,15 @@ v1.Kron(v2,result);
 			xt1[i] = param.xt;
 			yt1[i] = param.yt;
 
+
+//#if 0
 			std::cout << "x[" << i << "] = " << std::endl;
 			for (int j = 0; j < param.d; j++)			
 			{
 				std::cout << x1[i](j, 0).real() << " + " << x1[i](j, 0).imag() << " * im" << std::endl;
 			}
 
-			std::cout << "x[" << i << "] = " << std::endl;
+			std::cout << "y[" << i << "] = " << std::endl;
 			for (int j = 0; j < param.d; j++)			
 			{
 				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im" << std::endl;
@@ -1643,26 +2000,123 @@ v1.Kron(v2,result);
 //			std::cout << "norm(y" << i << ") = " << std::endl << norm(y1[i]) << std::endl;
 
 
+
 			std::cout << std::endl;
 			
-
+//#endif
 		}
+//#if 0
+		printf("bloch sphere parameters\n");
+		if (d == 2)
+		{
+			Eigen::MatrixXd x[param.d2];
+
+		for (int i = 0; i < param.number_of_terms; i++)
+		{
+			x[i] = Eigen::MatrixXd(3, 1);
+			double Tx = 2 * acos(x1[i](0,0).real());
+			double Px = std::arg(x1[i](1, 0));
+
+			double Ty = 2 * acos(y1[i](0,0).real());
+			double Py = std::arg(y1[i](1, 0));
+
+			printf("Tx%d = %f, Px%d = %f\tTy%d = %f, Py%d = %f\n", i, Tx, i, Px, i, Ty, i, Py);
+			printf("check if tetra\n");
+		
+/*			Eigen::MatrixXd x01;
+			x01 = Eigen::matrixxd(3,1);
+
+			Eigen::MatrixXd x01(3,1);
+*/
+			x[i] = Eigen::MatrixXd(3, 1);
+			x[i](0, 0) = sin(Tx) * cos(Px);
+			x[i](1, 0) = sin(Tx) * sin(Px);
+			x[i](2, 0) = cos(Tx);
+		}
+
+		Eigen::MatrixXd x01(3,1);;
+		x01 = x[1] + 0.5 * (x[0] - x[1]);
+		Eigen::MatrixXd x23(3, 1);
+		x23 = x[3] + 0.5 * (x[2] - x[3]);
+
+		Eigen::MatrixXd x01t(3, 1);
+		Eigen::MatrixXd x23t(3, 1);
+		
+		x01t = x01;
+		x01t.adjointInPlace();
+
+		x23t = x23;
+		x23t.adjointInPlace();
+
+		Eigen::MatrixXd x02(3,1);
+		x02 = x[2] + 0.5 * (x[0] - x[2]);
+		Eigen::MatrixXd x13(3, 1);
+		x13 = x[3] + 0.5 * (x[1] - x[3]);
+
+
+/*
+		Eigen::MatrixXd S0123 = (x01 - x23);
+		Eigen::MatrixXd S0213 = (x02 - x13);
+*/
+		Eigen::MatrixXd S0123 = 0.5 * (x[1] + x[0] - (x[2] + x[3]));
+		Eigen::MatrixXd S0213 = 0.5 * (x[2] + x[0] - (x[1] + x[3]));
+
+
+
+		Eigen::MatrixXd S0213t = S0213;
+		S0213t.adjointInPlace();
+
+		double value2 = 0.25 * (2 * x[1].adjoint() * x[2] - 2 * x[0].adjoint() * x[3])(0,0);
+
+		double value3 = 0.25 * (2 * x[0].adjoint() * x[2] - 2 * x[1].adjoint() * x[3])(0,0);
+
+		double value4 = 0.25 * (2 * x[0].adjoint() * x[3] - 2 * x[1].adjoint() * x[2])(0,0);
+
+//		double value = (S0213t * S0123)(0, 0);
+//		double value = ((0.5 * (x[1] + x[0] - (x[2] + x[3]))).adjoint() *  (0.5 * (x[2] + x[0] - (x[1] + x[3]))))(0, 0);
+
+		std::cout << "x[1] * x[1]" << (x[1].adjoint() * x[1])(0, 0) << std::endl; 
+/*
+		double value = 0.25 * ((x[1].adjoint() * x[2])(0, 0) + (x[1].adjoint() *x[0])(0, 0) - (x[1].adjoint() *x[1])(0, 0) - (x[1].adjoint() *x[3])(0, 0))
+					+( (x[0].adjoint() *  x[2])(0, 0) +  (x[0].adjoint() *  x[0])(0, 0) -  (x[0].adjoint() *  x[1])(0, 0) -  (x[0].adjoint() *  x[3])(0, 0))
+					-  ((x[2].adjoint() * x[2])(0, 0) + (x[2].adjoint() * x[0])(0, 0) - (x[2].adjoint() * x[1])(0, 0) - (x[2].adjoint() * x[3])(0, 0))
+					- ( (x[3].adjoint()  * x[2])(0, 0) + ( x[3].adjoint()  *x[0])(0, 0) -  (x[3].adjoint()  *x[1])(0, 0) -  (x[3].adjoint() * x[3])(0, 0));
+*/
+		double value = 0.25 * (x[1].adjoint() * x[2] + x[1].adjoint() *x[0] - x[1].adjoint() *x[3]
+					+ x[0].adjoint() *  x[2] -  x[0].adjoint() *  x[1] -  x[0].adjoint() *  x[3]
+					-  ( x[2].adjoint() * x[0] - x[2].adjoint() * x[1] - x[2].adjoint() * x[3])
+					- ( x[3].adjoint()  * x[2] +  x[3].adjoint()  * x[0] -  x[3].adjoint()  * x[1]))(0, 0);
+
+
+
+//		double value = 0.25 * (2 * (x[1].adjoint() * x[2])(0, 0) - 2 * (x[0].adjoint() * x[3])(0, 0));
+
+
+		printf("tetraeder axis product: %.10f, %.10f, %.10f, %.10f\n", value, value2, value3, value4);
+		}
+
+
+//#endif
+
+//#if 0
 		printf("next guess form\n");
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
 
-			std::cout << "guess[" << 2 * i << "] = " << std::endl;
+			std::cout << "guess[" << 2 * i << "] << ";
 			for (int j = 0; j < param.d; j++)			
 			{
-				std::cout << x1[i](j, 0).real() << " + " << x1[i](j, 0).imag() << " * im";
+				printf("%.20f + %.20f * im", x1[i](j, 0).real(), x1[i](j, 0).imag());
 				if (j != param.d - 1)
 					cout << ", ";
 			}
 			cout << ";" << endl;
-			std::cout << "guess[" << 2 * i + 1 << "] = " << std::endl;
+			std::cout << "guess[" << 2 * i + 1 << "] << ";
 			for (int j = 0; j < param.d; j++)			
 			{
-				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im" << ", ";
+//				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im";
+
+				printf("%.20f + %.20f * im", y1[i](j, 0).real(), y1[i](j, 0).imag());	
 				if (j != param.d - 1)
 					cout << ", ";
 			}
@@ -1683,7 +2137,9 @@ v1.Kron(v2,result);
 			
 
 		}
-/*
+//#endif
+
+#if 0
 		printf("weyl generated vectors from x0, y0\n");
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
@@ -1695,6 +2151,22 @@ v1.Kron(v2,result);
 			int j = i / param.d;
 			int k = i % param.d;
 
+	complex<double>X[param.d];
+	complex<double>Y[param.d];
+
+	for (int l = 0; l < param.d; l++)
+		X[l] = (param.W[j][k] * x1[0])(l, 0);
+	for (int l = 0; l < param.d; l++)
+		xW(l, 0) = X[l];
+	for (int l = 0; l < param.d; l++)
+		Y[l] = (param.W[j][k] * y1[0])(l, 0);
+	for (int l = 0; l < param.d; l++)
+		yW(l, 0) = Y[l];
+
+
+
+
+/*
 			complex<double>x_0 = (param.W[j][k] * x1[0])(0,0);
 			complex<double>x_1 = (param.W[j][k] * x1[0])(1,0);
 			xW(0,0) = x_0;
@@ -1704,17 +2176,20 @@ v1.Kron(v2,result);
 			complex<double>y_1 = (param.W[j][k] * y1[0])(1,0);
 			yW(1,0) = y_1;
 			yW(0,0) = y_0;
-
+*/
 			std::cout << "xW[" << i << "] = " << std::endl << xW << std::endl;
 //			std::cout << "norm(x" << i << ") = " << std::endl << sqrt((x1[i] * xt1[i])(0,0)) << std::endl;
 
 
-			std::cout << "yW[" << i << " ]= " << std::endl << yW << std::endl << std::endl;
+			std::cout << "yW[" << i << "] = " << std::endl << yW << std::endl << std::endl;
 
 
 			
 		}
-*/
+
+#endif
+//		print conditions
+//#if 0
 	std::cout << std::endl << "Condition 3.2 (1):" << std::endl;
 	for (int i = 0; i < param.number_of_terms; i++)
 		{
@@ -1729,7 +2204,8 @@ v1.Kron(v2,result);
 			std::complex<double> xty2 = std::norm((xt1[i] * y1[i])(0,0)); 
 			double value = xy2 - xty2.real();
 			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
-//			std::cout << std::endl << "|<xi|yi|^2 = " << xty2.real();
+			std::cout << std::endl << "|<xi|yi|^2 = " << xty2.real();
+
 //			get vectors for future check of conditions
 		}
 
@@ -1742,7 +2218,7 @@ v1.Kron(v2,result);
 			{
 				if (i != j)
 				{	
-					double xy = (1 - t) / (double)param.d;
+/*					double xy = (1 - t) / (double)param.d;
 					std::complex<double> xty = (xt1[i] * y1[j])(0,0);
 //						squared <x|y>
 					xty = conj(xty) * xty;
@@ -1754,23 +2230,45 @@ v1.Kron(v2,result);
 					xtxyty = xtxyty * conj(xtxyty);
 					double sxtxyty = xtxyty.real();
 					std::cout << "|<x" << j << "|x" << i << "> * <y" << i << "|y" << j << ">| - t =  " << sxtxyty - t * t << std::endl;
+*/
+					printf("product of x': <x%d|x%d> = ", i, j);
+					std::cout <<  (x1[i].adjoint() * x1[j])(0, 0) << std::endl;
+					printf("abs product of x': |<x%d|x%d>| = ", i, j);
+					std::cout <<  std::abs((x1[i].adjoint() * x1[j])(0, 0)) << std::endl;
+					printf("arg og product of x': arg(<x%d|x%d>) = ", i, j);
+					std::cout <<  std::arg((x1[i].adjoint() * x1[j])(0, 0)) << std::endl;
+					
 				}
 			}
 		}
-		printf("f() = %f\n size = %f\n", s->fval, size);
-
+//#endif
+//		printf("f() = %.30f\n size = %.30f\n", (double)s->fval, (double)size);
+//		fprintf(fptr, "%.21f\t %.30f\t %.10f\n", t, s->fval * 1e24, size);
+		printf("%.10f\t %.30f\t %.20f\n", t, s->fval, size);
+		t = t - eps;
+		param.t = t;
+		gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
+	}
 
 ///////////////////////////////////////////////////
 
+//	printf("CHECK t = %.30f, f = %.30f\n", t, my_f(param.v, &param));
 
 
+/*
+	for (int i = 0; i < 1000; i++)
+	{	
+		t = t - 0.001;
+		param.t = t;
+//                       t   d
+		printf("%.30f\t %.30f\n", t, my_f(param.v, &param));
 
+	}
+*/
 	gsl_vector_free(x);
 	gsl_vector_free(ss);
 	gsl_multimin_fminimizer_free (s);
 
 	return status;
 }
-
-
 
