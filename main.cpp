@@ -245,15 +245,21 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 
 	else if (param->d == 3)
 	{
+		double t = param->t;
+
+
+		if (t == 1.0/(param->d + 1))
+		{		
+			param->x(0,0) = sqrt(2/3.0);
+			param->x(1, 0) = -1 / sqrt(6);
+			param->x(2, 0) = -1/sqrt(6);
+
+			param->y(0,0) = sqrt(2/3.0);
+			param->y(1, 0) = -1 / sqrt(6);
+			param->y(2, 0) = -1/sqrt(6);
 		
-		param->x(0,0) = sqrt(2/3.0);
-		param->x(1, 0) = -1 / sqrt(6);
-		param->x(2, 0) = -1/sqrt(6);
-
-		param->y(0,0) = sqrt(2/3.0);
-		param->y(1, 0) = -1 / sqrt(6);
-		param->y(2, 0) = -1/sqrt(6);
-
+//		printf("1: %f,%f,%f\n%f,%f,%f\n", std::abs(param->x(0, 0)), std::abs(param->x(1, 0)), std::abs(param->x(2, 0)), std::abs(param->y(0, 0)), std::abs(param->y(1, 0)), std::abs(param->y(2, 0)));
+		}
 /*
 		complex<double>x0 = (param->W[j][k] * param->x)(0,0);
 		complex<double>x1 = (param->W[j][k] * param->x)(1,0);
@@ -274,6 +280,49 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 		param->y(2,0) = y2;
 
 */
+		else{
+
+		double a1 = 1 + 7 * t - 8 * t * t;
+		double a = sqrt((5 + 4 * t + 4 * sqrt(a1)) / 81.0);
+		double p = (1 + 2 * t - sqrt(a1)) / (1 - 4 * t);
+		double l = (-1 + sqrt( 1 + 4 * p)) / 2.0;
+		double B = -a * (l + 1);
+
+//		printf("t, a, a1, p, l B: %f, %f, %f, %f, %f, %f\n", t, a, a1, p, l, B);
+
+		Eigen::MatrixXd u(3,1);
+		Eigen::MatrixXd v(3,1);
+
+		u(0, 0) = 1;
+		u(1, 0) = l;
+		u(2, 0) = l;
+
+		v(0, 0) = a;
+		v(1, 0) = B;
+		v(2, 0) = B;
+
+
+
+
+
+		param->x(0, 0) = (sqrt(3)  * sqrt((v.adjoint() * v)(0, 0)) * u)(0, 0);
+		param->x(1, 0) = (sqrt(3)  * sqrt((v.adjoint() * v)(0, 0)) * u)(1, 0);
+		param->x(2, 0) = (sqrt(3)  * sqrt((v.adjoint() * v)(0, 0)) * u)(2, 0);
+
+
+//		printf("|v| = %f\n", (v.adjoint() * v )(0, 0));
+//		printf("|v| = %f\n", sqrt((v.adjoint() * v )(0, 0)));
+
+
+		param->y(0, 0)= (v / sqrt((v.adjoint() * v )(0, 0)))(0, 0);
+		param->y(1, 0)= (v / sqrt((v.adjoint() * v )(0, 0)))  (1, 0);
+		param->y(2, 0)= (v / sqrt((v.adjoint() * v )(0, 0)))  (2, 0);
+
+
+//		printf("2: %f,%f,%f\n%f,%f,%f\n", std::abs(param->x(0, 0)), std::abs(param->x(1, 0)), std::abs(param->x(2, 0)), std::abs(param->y(0, 0)), std::abs(param->y(1, 0)), std::abs(param->y(2, 0)));
+
+
+		}
 	}
 	else if (param->d == 4)
 	{
@@ -351,6 +400,50 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 
 
 //		printf("not implemented!\n");
+		if(t == 0)
+		{
+//			NOT FINISHED !!
+			int d = param->d;
+//			Eigen::MatrixXcd(d, 1) a[d];
+//			Eigen::MatrixXcd(d, 1) b[d];
+			Eigen::MatrixXcd a[d];
+			Eigen::MatrixXcd b[d];
+
+
+			for(int i = 0; i < d; i++)
+			{
+/*
+				for(int j = 0; j < d; i++)
+				{
+
+					a[i](i, 0) = 1;
+					b[i](i, 0) = 1;
+				}*/
+				a[i] = Eigen::MatrixXcd(d, 1);
+				a[i] = param->Identity.col(i);
+				std::cout << "a[i] is "<< a[i] << endl;
+
+				b[i] = Eigen::MatrixXcd(d, 1);
+				b[i] = param->Identity.col(i);
+	
+			}
+			for(int k = 0; k < d; k++)
+			{
+
+				for(int l = 0; l < d; l++)
+				{
+					x[k][l] = a[k];
+					y[k][l] = b[l];
+				}
+			}
+
+			param->x(0, 0) = 0.485712214091264;
+			param->x(1, 0) = 0.600433696-0.4498963669 * im;
+			param->x(2, 0) = -0.201188586 *im;
+			param->x(3, 0) = -0.3992451-0.0358158471 * im;
+
+
+		}
 	}
 
 	complex<double>X[param->d];
@@ -393,7 +486,7 @@ void		init_with_known_solution(t_param *param, const gsl_vector *x, int i)
 
  
 
-//	inits i'th vector
+//	inits i'th pair of vectors, writes to param->x and param-y
 void		init_xy(t_param *param, const gsl_vector *x, int i)
 {
 
@@ -443,22 +536,50 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 		param->y(1, 0) = sin(B) * polar(1.0, A);//	sin(B) * e^iA
 
 //		std::cout << "vector is " << param->x << std::endl;
+
+////		init x[i > 0], y[i > 0] with weyl-heisenberg
+
+
+
+	if (i > 0)
+	{
+#if 0
+		//init fiducial vector
+		double B1, A1, Y1, X1, w1;
+
+		Y1 = gsl_vector_get(x, 0);
+		X1 = gsl_vector_get(x, 1);
+		B1 = gsl_vector_get(x, 2);
+		A1 = gsl_vector_get(x, 3);
+
+
+//		std::complex<double> x[2];
+//		std::complex<double> y[2];
+
+//		MyMatrixXd x(d,1);
+//		MyMatrixXd y(d,1);
+
+//		for future transposition
+//		MyMatrixXd xt(d,1);
+//		MyMatrixXd yt(d,1);
+
+
+//		init |x> and |y> from parameters A, B, X, Y, alway explicitly
+//		passed to my_f() so that <x|x> = <y|y> = 1
+
+		param->x(0, 0) = std::abs(cos(Y1)); //					cos(Y)
+//					magnitude (>0 always)
+//		x(1, 0) = sgn(sin(Y)) * polar(abs(sin(Y)), X);//	sin(Y) * e^iX
+		param->x(1, 0) = sin(Y1) * polar(1.0, X1);//	sin(Y) * e^iX
+		param->y(0, 0) = std::abs(cos(B1)); //					cos(B)
+//		y(1, 0) = sgn(sin(B)) * polar(abs(sin(B)), A);//	sin(B) * e^iA
+		param->y(1, 0) = sin(B1) * polar(1.0, A1);//	sin(B) * e^iA
+
+
+	int j = i / param->d;
+	int k = i % param->d;
+
 /*
-////		EXPERIMENT
-
-		double B, A, Y, X, w;
-
-		Y = gsl_vector_get(x, 0 + param->line_length * 0);
-		X = gsl_vector_get(x, 1 + param->line_length * 0);
-		B = gsl_vector_get(x, 2 + param->line_length * 0);
-		A = gsl_vector_get(x, 3 + param->line_length * 0);
-
-		param->x(0, 0) = cos(Y);
-		param->x(1, 0) = sin(Y) * polar(1.0, X);
-		param->y(0, 0) = cos(B);
-		param->y(1, 0) = sin(B) * polar(1.0, A);
-
-
 	complex<double>x0 = (param->W[j][k] * param->x)(0,0);
 	complex<double>x1 = (param->W[j][k] * param->x)(1,0);
 	param->x(0,0) = x0;
@@ -468,28 +589,65 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 	complex<double>y1 = (param->W[j][k] * param->y)(1,0);
 	param->y(1,0) = y1;
 	param->y(0,0) = y0;
+
 */
+	complex<double>X[param->d];
+	complex<double>Y[param->d];
+
+	for (int l = 0; l < param->d; l++)
+		X[l] = (param->W[j][k] * param->x)(l, 0);
+	for (int l = 0; l < param->d; l++)
+		param->x(l, 0) = X[l];
+	for (int l = 0; l < param->d; l++)
+		Y[l] = (param->W[j][k] * param->y)(l, 0);
+	for (int l = 0; l < param->d; l++)
+		param->y(l, 0) = Y[l];
+
+double phasex = std::arg(param->x(0, 0));
+	for (int l = 0; l < param->d; l++)
+		param->x(l, 0) = param->x(l, 0) * polar(1.0, -phasex);
+
+	double phasey = std::arg(param->y(0, 0));
+	for (int l = 0; l < param->d; l++)
+		param->y(l, 0) = param->y(l, 0) * polar(1.0, -phasey);
+
+	//	std::cout << "x" << i << " : " << param->x << endl;
+
+#endif
+
+	}
 
 
 		if (i == 0)
 		{
+//			|x0> = |0>
+//			param->x(0, 0) = 1.0 + 0.0 * im;
+//			param->x(1, 0) = 0.0;
+//////////
 /*
-			param->x(0, 0) = 1.0 + 0.0 * im;
-			param->x(1, 0) = 0.0;
+			param->x(0, 0) = 1.0 / sqrt(2);
+			param->x(1, 0) = 1 / sqrt(2) * polar(1.0, 1.0);
 */
+			// y дійсний
 //			param->y(1, 0) = std::abs(param->y(1, 0));
 		}
 
-
-/*
 		else if (i == 1)
 		{
-			param->x(1, 0) = std::abs(param->x(1, 0));//misterious free param!
+			// |x1> дійсний
+//			param->x(1, 0) = std::abs(param->x(1, 0));//misterious free param!
+
 //			param->x(0, 0) = 0.0 + 0.0 * im;
 //			param->x(1, 0) = 0.0 + 1.0 * im;
 
+/*
+			param->x(0, 0) = 0.22831118948877446306 + 0.00000000000000000000 * im;
+			param->x(1, 0) =  0.71111332912290403652 + -0.66497506261360017632 * im;
+*/
+
+
 		}
-		*/
+		
 		}
 //#endif
 
@@ -518,8 +676,6 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 		yA = gsl_vector_get(x, 6 + param->line_length * i);
 		yB = gsl_vector_get(x, 7 + param->line_length * i);
 
-
-
 		param->x(0, 0) = cos(xal) * cos(xbe);
 		param->x(1, 0) = polar(1.0, xA) * cos(xal) * sin(xbe);
 		param->x(2, 0) = polar(1.0, xB) * sin(xal);
@@ -527,6 +683,19 @@ void		init_xy(t_param *param, const gsl_vector *x, int i)
 		param->y(0, 0) = cos(yal) * cos(ybe);
 		param->y(1, 0) = polar(1.0, yA) * cos(yal) * sin(ybe);
 		param->y(2, 0) = polar(1.0, yB) * sin(yal);
+
+		if (i == 0)
+		{
+/*			param->x(0, 0) = cos(xal) * cos(xbe);
+			param->x(1, 0) = cos(xal) * sin(xbe);
+			param->x(2, 0) = sin(xal);
+*/
+			param->x(0, 0) = param->x(0, 0).real();
+			param->x(1, 0) = param->x(1, 0).real();
+			param->x(2, 0) = param->x(2, 0).real();
+
+		}
+
 		}
 //#endif 
 
@@ -1167,6 +1336,7 @@ double	my_f (const gsl_vector *v, void *params)
 				n += norm(p->M(j,k));
 			}
 		}
+//	printf("my_f: %f\n", n);
 	return (n);
 }
 
@@ -1307,6 +1477,7 @@ void	init_weyl(t_param *p)
         C(3,3) = 0;
 
 */
+	complex<double>T = polar(1.0,  2 * M_PI * (p->d + 1)/(2 * p->d));
 	for (int i = 0; i < p->d; i++)
 	{
 		C(i ,i) = polar(1.0, 2 * M_PI / p->d * i);
@@ -1364,7 +1535,7 @@ void	init_weyl(t_param *p)
 
                         cout << pow(C,i) * pow(S,j) << endl << endl;
 */
-                        p->W[i][j] = pow(C, i) * pow(S, j);
+                        p->W[i][j] = pow(pow(T, i), j) * pow(C, i) * pow(S, j);
 
 			cout << "W" << i << j << endl;
                         cout << p->W[i][j] << endl << endl;
@@ -1385,9 +1556,9 @@ void	init_weyl(t_param *p)
 int	main(void)
 {
 	srand(time(0));
-	int d = 2;
-	double eps = 0.0001;
-	double t =  0.5 * 1/( (double) (d + 1))/*0.2*/;
+	int d = 3;
+	double eps = /*0.00001 */0.00001;
+	double t =  0.5 * 1/( (double) (d + 1))/*0.2*/ /*- 0.0001*/;
 //                       t   d
 /*
 	double par[2] = {t, (double)d};
@@ -1400,7 +1571,6 @@ int	main(void)
 	gsl_vector *ss, *x;
 	gsl_multimin_function minex_func;
 
-	size_t iter = 0;
 	int status;
 	double size;
 
@@ -1591,7 +1761,6 @@ v1.Kron(v2,result);
 //	for d = 2, t = 0.5 / (d+1)
 
 /*
-
 guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
 guess[1] << 0.86602540378416570377 + 0.00000000000000000000 * im, 0.50000000000047273296 + 0.00000000000000000000 * im;
 
@@ -1603,10 +1772,11 @@ guess[5] << 0.64549722436808332215 + 0.00000000000000000000 * im, -0.76368819500
 
 guess[6] << 0.25250074732206195804 + 0.00000000000000000000 * im, 0.61639494294341312663 + 0.74585564750532440392 * im;
 guess[7] << 0.64549722436801748593 + 0.00000000000000000000 * im, -0.04051536800939155303 + 0.76268724801733034369 * im;
-
-
 */
-//d = 2	// t = 1 / (d + 1)
+
+
+//d = 2	// t = 1 / (d + 1) //|x0> = |0>
+
 /*
 guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
 guess[1] << 0.99999999367380554283 + 0.00000000000000000000 * im, 0.00011248283829210840 + 0.00000000000000000000 * im;
@@ -1620,6 +1790,27 @@ guess[5] << 0.57735027284097051314 + 0.00000000000000000000 * im, -0.40834570215
 guess[6] << 0.57739618463403541426 + 0.00000000000000000000 * im, -0.40818334848031445627 + 0.70710678118192105135 * im;
 guess[7] << 0.57735027284868301045 + 0.00000000000000000000 * im, -0.40834570215230908685 + 0.70705052858709394048 * im;
 */
+
+
+
+//PPPR solution
+
+/*
+guess[0] << 0.88807383625838032248 + 0.00000000000000000000 * im, 0.32505758055560213249 + 0.32505758055560207698 * im;
+guess[1] << 0.88807383169585019100 + 0.00000000000000000000 * im, 0.32505758678813423401 + 0.32505758678813417850 * im;
+
+guess[2] << 0.45970083897391733618 + -0.00000000000000002776 * im, 0.62796303181265245019 + -0.62796303181265233917 * im;
+guess[3] << 0.45970084778804881642 + 0.00000000000000002776 * im, 0.62796302858645647316 + -0.62796302858645636213 * im;
+
+guess[4] << 0.88807383625838032248 + 0.00000000000000000000 * im, -0.32505758055560218800 + -0.32505758055560202147 * im;
+guess[5] << 0.88807383169585019100 + 0.00000000000000000000 * im, -0.32505758678813428952 + -0.32505758678813412299 * im;
+
+guess[6] << 0.45970083897391733618 + -0.00000000000000002776 * im, -0.62796303181265233917 + 0.62796303181265245019 * im;
+guess[7] << 0.45970084778804881642 + 0.00000000000000002776 * im, -0.62796302858645636213 + 0.62796302858645647316 * im;
+*/
+
+//just random solution for t = 1/(d + 1), d = 2
+
 /*
 guess[0] << 0.686330 + 0.000000 * im, -0.183671 + 0.703716 * im;
 guess[1] << 0.686327 + 0.000000 * im, -0.183678 + 0.703717 * im;
@@ -1634,6 +1825,9 @@ guess[6] << 0.462438 + 0.000000 * im, -0.666911 + -0.584278 * im;
 guess[7] << 0.462437 + 0.000000 * im, -0.666920 + -0.584269 * im;
 */
 
+
+//all of this doesn't work why?
+//	d = 2, t = 0.5 / (d+1)
 
 
 /*
@@ -1650,6 +1844,7 @@ guess[6] << 0.37101726734477979974 + 0.00000000000000000000 * im, -0.83675060956
 guess[7] << 0.64549722436648815371 + 0.00000000000000000000 * im, -0.10926778578411425191 + -0.75590600230782434288 * im;
 */
 
+//	d = 2, t = 0.5 / (d+1)
 /*
 guess[0] << 1.00000000000000000000 + 0.00000000000000000000 * im, 0.00000000000000000000 + 0.00000000000000000000 * im;
 guess[1] << 0.86602540378526204901 + 0.00000000000000000000 * im, -0.27611587396076742174 + 0.41684532400574614286 * im;
@@ -1663,6 +1858,8 @@ guess[5] << 0.64549722436665424308 + 0.00000000000000000000 * im, 0.342976923257
 guess[6] << 0.93014439857530939459 + 0.00000000000000000000 * im, 0.31635367472322617477 + -0.18641821340225075976 * im;
 guess[7] << 0.64549722436702650086 + 0.00000000000000000000 * im, 0.45826497097502705280 + -0.61100454148207639093 * im;
 */
+//}
+
 
 //#if 0
 //d = 4, t = 1/(d + 1)
@@ -1718,10 +1915,10 @@ guess[30] << 0.75028494390333944075 + 0.00000000000000000000 * im, -0.1610057785
 guess[31] << 0.75028494303019888090 + 0.00000000000000000000 * im, -0.16100577359455892079 + -0.12063966657294182550 * im, 0.29802920358248946586 + 0.26806337041367173102 * im, -0.29124996718138052021 + 0.38870270883009400142 * im;
 */
 
-//d = 3??
+//d = 3 t = 1/(d + 1)??
+
 
 /*
-
 guess[0] << 0.81649658092772603446 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im;
 guess[1] << 0.81649658092772603446 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im, -0.40824829046386307274 + 0.00000000000000000000 * im;
 
@@ -1748,22 +1945,56 @@ guess[15] << 0.40824829046386307274 + 0.00000000000000005000 * im, 0.40824829046
 
 guess[16] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.20412414523193170290 + -0.35355339059327373086 * im, 0.40824829046386240661 + -0.70710678118654790580 * im;
 guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.20412414523193170290 + -0.35355339059327373086 * im, 0.40824829046386240661 + -0.70710678118654790580 * im;
-
 */
+
+
+// d = 3, t = 0.5 * 1/(d + 1)
+
+
+
+
+guess[0] << 0.97003018089340831143 + 0.00000000000000000000 * im, -0.17181595990463416346 + 0.00000000000000000000 * im, -0.17181595990463416346 + 0.00000000000000000000 * im;
+guess[1] << 0.65173918228522265128 + 0.00000000000000000000 * im, -0.53630030685903462562 + 0.00000000000000000000 * im, -0.53630030685903462562 + 0.00000000000000000000 * im;
+
+guess[2] << 0.17181595990463416346 + 0.00000000000000002104 * im, -0.97003018089340831143 + -0.00000000000000011879 * im, 0.17181595990463416346 + 0.00000000000000002104 * im;
+guess[3] << 0.53630030685903462562 + 0.00000000000000006568 * im, -0.65173918228522265128 + -0.00000000000000007982 * im, 0.53630030685903462562 + 0.00000000000000006568 * im;
+
+guess[4] << 0.17181595990463416346 + 0.00000000000000002104 * im, 0.17181595990463416346 + 0.00000000000000002104 * im, -0.97003018089340831143 + -0.00000000000000011879 * im;
+guess[5] << 0.53630030685903462562 + 0.00000000000000006568 * im, 0.53630030685903462562 + 0.00000000000000006568 * im, -0.65173918228522265128 + -0.00000000000000007982 * im;
+
+guess[6] << 0.97003018089340831143 + 0.00000000000000000000 * im, 0.08590797995231704010 + -0.14879698605302174585 * im, 0.08590797995231715112 + 0.14879698605302166259 * im;
+guess[7] << 0.65173918228522265128 + 0.00000000000000000000 * im, 0.26815015342951720179 + -0.46444968979731388048 * im, 0.26815015342951753485 + 0.46444968979731365843 * im;
+
+guess[8] << 0.17181595990463416346 + 0.00000000000000002104 * im, 0.48501509044670404469 + -0.84007077909130600801 * im, -0.08590797995231713724 + -0.14879698605302166259 * im;
+guess[9] << 0.53630030685903462562 + 0.00000000000000006568 * im, 0.32586959114261121462 + -0.56442268850069987618 * im, -0.26815015342951747934 + -0.46444968979731371395 * im;
+
+guess[10] << 0.17181595990463416346 + 0.00000000000000002104 * im, -0.08590797995231705397 + 0.14879698605302174585 * im, 0.48501509044670448878 + 0.84007077909130589699 * im;
+guess[11] << 0.53630030685903462562 + 0.00000000000000006568 * im, -0.26815015342951725730 + 0.46444968979731382497 * im, 0.32586959114261154768 + 0.56442268850069965413 * im;
+
+guess[12] << 0.97003018089340831143 + 0.00000000000000000000 * im, 0.08590797995231717887 + 0.14879698605302169034 * im, 0.08590797995231692907 + -0.14879698605302180137 * im;
+guess[13] << 0.65173918228522265128 + 0.00000000000000000000 * im, 0.26815015342951759036 + 0.46444968979731371395 * im, 0.26815015342951681321 + -0.46444968979731410252 * im;
+
+guess[14] << 0.17181595990463416346 + 0.00000000000000002104 * im, 0.48501509044670459980 + 0.84007077909130589699 * im, -0.08590797995231694295 + 0.14879698605302180137 * im;
+guess[15] << 0.53630030685903462562 + 0.00000000000000006568 * im, 0.32586959114261165871 + 0.56442268850069965413 * im, -0.26815015342951686872 + 0.46444968979731404701 * im;
+
+guess[16] << 0.17181595990463416346 + 0.00000000000000002104 * im, -0.08590797995231716500 + -0.14879698605302169034 * im, 0.48501509044670337856 + -0.84007077909130634108 * im;
+guess[17] << 0.53630030685903462562 + 0.00000000000000006568 * im, -0.26815015342951753485 + -0.46444968979731376946 * im, 0.32586959114261082604 + -0.56442268850070009822 * im;
+
 
 	printf("guess inited\n");
 
-//	doesn't work for d = 4 // works now
-//	init_minimizing_guess(&param, guess);
+
+
+	init_minimizing_guess(&param, guess);
 
 //#endif
 
 
-
+/*
 	for (int i = 0; i < param.degrees_of_freedom; i++)
 		gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
 
-
+*/
 
 
 	
@@ -1775,7 +2006,12 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 
 	/* Set initial step sizes to 1 */
 	ss = gsl_vector_alloc(param.degrees_of_freedom);
-	gsl_vector_set_all (ss, 0.000001);
+	float prec = 1e-8; /*1e-9; *//*1e-11;*/
+
+
+//	gsl_vector_set_all(ss, prec);
+	float step_size = 0.000001;
+	gsl_vector_set_all(ss, step_size);
 
 	/* Initialize method and iterate */
 	minex_func.n = param.degrees_of_freedom;
@@ -1796,9 +2032,17 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 
 	printf("start minimizing\n");
 	printf("CHECK t = %.20f, f = %.20f\n", t, my_f(x, &param));
-	int N =/* lround(1/(eps * (d + 1))) / 2*/ 1;
-	for (int i = 0; i < N; i++)
+//	int  = lround(1/(eps * (d + 1)));
+
+	for (int i = 0; param.t > 0; i++)
 	{
+	size_t iter = 0;
+/*
+	for (int i = 0; i < param.degrees_of_freedom; i++)
+		gsl_vector_set (x, i,rand() / (float)RAND_MAX * M_PI * 2);
+*/
+
+
 	do
 	{
 		iter++;
@@ -1807,12 +2051,14 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 		if (status)
 			break;
 
-		size = gsl_multimin_fminimizer_size (s);
-		status = gsl_multimin_test_size (size, 1e-11);
+		size = gsl_multimin_fminimizer_size(s);
+
+		status = gsl_multimin_test_size (size, prec);
+
 
 		if (status == GSL_SUCCESS)
 		{
-//#if 0
+#if 0
 				printf ("converged to minimum at %zu:\n", iter);
 
 //#if 0
@@ -1838,7 +2084,7 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 
 
 				printf("\n f() = %f size = %f\n", s->fval, size);
-//#endif
+#endif
 /*				for (int i = 0; i < param.number_of_terms; i++) {
 					for (int j = 0; j < param.line_length; j++) {
 						arg[i][j] = gsl_vector_get (s->x, i * param.line_length + j);
@@ -1854,7 +2100,7 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 		int condition;
 		condition = 1;
 
-//#if 0
+#if 0
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
 			// this checks all pairwise products <xi|yi> if the code found a local minimum
@@ -1898,13 +2144,14 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 //			gsl_vector_set_all (ss, 0.0001);
 			gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
 		}
-//#endif
+#endif
 	
 
 
 		}
 
 //#if 0
+
 		if (iter % 4000 == 0)
 			printf("iteration: %zu\n f() = %.30f\n size = %.30f\n", iter, s->fval, size);	
 
@@ -1915,7 +2162,7 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 */
 
 	}
-	while (status == GSL_CONTINUE && iter < 2000000);
+	while (status == GSL_CONTINUE && iter < 200000);
 
 //#if 0
 
@@ -1975,19 +2222,49 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 			xt1[i] = param.xt;
 			yt1[i] = param.yt;
 
+//			std::cout << "x[" << i << "] = " << endl;
+//			for (int j = 0; j < param.d; j++)			
+			{
+		//		fprintf(fptr, "%.21f\t %.30f\t %.10f\n", t, s->fval * 1e24, size);
+			}
 
-//#if 0
-			std::cout << "x[" << i << "] = " << std::endl;
+
+#if 0
+
+//			print vectors my format // guess forma lower
+			std::cout << "x[" << i << "] = " << endl;
 			for (int j = 0; j < param.d; j++)			
 			{
 				std::cout << x1[i](j, 0).real() << " + " << x1[i](j, 0).imag() << " * im" << std::endl;
 			}
 
-			std::cout << "y[" << i << "] = " << std::endl;
+			std::cout << "y[" << i << "] = " << endl;
 			for (int j = 0; j < param.d; j++)			
 			{
 				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im" << std::endl;
 			}
+#endif
+
+
+			// Yakymenko format
+#if 0
+			std::cout << "x[" << i << "] = [";
+			for (int j = 0; j < param.d; j++)			
+			{
+				std::cout << x1[i](j, 0).real() << " + " << x1[i](j, 0).imag() << " * im";
+				if (j != param.d - 1)
+					std::cout << "; ";
+			}
+			std::cout << "]" << endl;
+
+			std::cout << "y[" << i << "] = [";
+			for (int j = 0; j < param.d; j++)			
+			{
+				std::cout << y1[i](j, 0).real() << " + " << y1[i](j, 0).imag() << " * im";
+				if (j != param.d - 1)
+					std::cout << "; ";
+			}
+			std::cout << "]" << endl;
 
 
 //			std::cout << "norm(x" << i << ") = " << std::endl << sqrt((x1[i] * xt1[i])(0,0)) << std::endl;
@@ -2003,9 +2280,10 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 
 			std::cout << std::endl;
 			
-//#endif
+#endif
 		}
-//#if 0
+
+#if 0
 		printf("bloch sphere parameters\n");
 		if (d == 2)
 		{
@@ -2033,8 +2311,13 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 			x[i](1, 0) = sin(Tx) * sin(Px);
 			x[i](2, 0) = cos(Tx);
 		}
+		for (int i = 0; i < param.d2; i++)
+			for (int j = 0; j < param.d2; j++)
+				printf("3D vector product x[%d] * x[%d] = %f\n", i, j, (x[i].adjoint() * x[j])(0, 0));
 
-		Eigen::MatrixXd x01(3,1);;
+
+
+		Eigen::MatrixXd x01(3,1);
 		x01 = x[1] + 0.5 * (x[0] - x[1]);
 		Eigen::MatrixXd x23(3, 1);
 		x23 = x[3] + 0.5 * (x[2] - x[3]);
@@ -2061,6 +2344,11 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 		Eigen::MatrixXd S0123 = 0.5 * (x[1] + x[0] - (x[2] + x[3]));
 		Eigen::MatrixXd S0213 = 0.5 * (x[2] + x[0] - (x[1] + x[3]));
 
+		double a = (S0213.adjoint() * (x[0] - x[2]))(0, 0);
+		printf("a = %f\n", a);
+
+		double b = (S0213.adjoint() * (x[0] - x[3]))(0, 0);
+		printf("b = %f\n", b);
 
 
 		Eigen::MatrixXd S0213t = S0213;
@@ -2096,10 +2384,10 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 		}
 
 
-//#endif
+#endif
 
-//#if 0
-		printf("next guess form\n");
+#if 0
+		printf("next guess format \n");
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
 
@@ -2137,7 +2425,7 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 			
 
 		}
-//#endif
+#endif
 
 #if 0
 		printf("weyl generated vectors from x0, y0\n");
@@ -2190,7 +2478,8 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 #endif
 //		print conditions
 //#if 0
-	std::cout << std::endl << "Condition 3.2 (1):" << std::endl;
+	int check = 1;
+//	std::cout << std::endl << "Condition 3.2 (1):" << std::endl;
 	for (int i = 0; i < param.number_of_terms; i++)
 		{
 		//	init_xy(&param, s->x, i);
@@ -2203,14 +2492,25 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 			double xy2 = (t * (param.d2 - 1) + 1) / (double)param.d;
 			std::complex<double> xty2 = std::norm((xt1[i] * y1[i])(0,0)); 
 			double value = xy2 - xty2.real();
-			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
-			std::cout << std::endl << "|<xi|yi|^2 = " << xty2.real();
-
+/*
+			std::complex<double> xty = (xt1[i] * y1[i])(0, 0);
+			std::cout << std::endl << "<xi|yi> = r * e^i" << std::arg(xty);
+*/
 //			get vectors for future check of conditions
+
+//#if 0
+			if (i == 0)
+				std::cout << std::endl << "Condition 3.2 (1):" << std::endl;
+
+			std::cout << std::endl << "(...) - |<xi|yi>|^2 = " << value;
+			std::cout << std::endl << "<xi|yi> = " << xt1[i] * y1[i];
+//#endif
+			if (value > prec * 10)
+				check = 0;
 		}
 
-		std::cout << std::endl;
-		std::cout << std::endl << "Condition 3.2 (2) and 3.3:" << std::endl;
+//		std::cout << std::endl;
+//		std::cout << std::endl << "Condition 3.2 (2) and 3.3:" << std::endl;
 
 		for (int i = 0; i < param.number_of_terms; i++)
 		{
@@ -2218,35 +2518,86 @@ guess[17] << 0.40824829046386307274 + 0.00000000000000005000 * im, -0.2041241452
 			{
 				if (i != j)
 				{	
-/*					double xy = (1 - t) / (double)param.d;
+					double xy = (1 - t) / (double)param.d;
 					std::complex<double> xty = (xt1[i] * y1[j])(0,0);
 //						squared <x|y>
 					xty = conj(xty) * xty;
-//					std::cout << "xti is " << xty << std::endl;
 					double sxty = xty.real();
-//					std::cout << "(1 - t) / d = " << xy << std::endl;
-					std::cout << "|x" << i << " * y" << j << "|^2 - (1-t)/d = " << sxty - xy << std::endl;
+					double value1 = sxty - xy;
+					if (value1 > prec * 10)
+						check = 0;
 					complex<double> xtxyty = ((xt1[j] * x1[i])(0,0)) * ((yt1[i] * y1[j])(0,0));
 					xtxyty = xtxyty * conj(xtxyty);
 					double sxtxyty = xtxyty.real();
-					std::cout << "|<x" << j << "|x" << i << "> * <y" << i << "|y" << j << ">| - t =  " << sxtxyty - t * t << std::endl;
+					double value2 = sxtxyty - t * t; 
+					if (value2 > prec * 10)
+						check = 0;
+
+/*					if (i == 0 && j == 0)
+						std::cout << endl << std::endl << "Condition 3.2 (2) and 3.3:" << std::endl;
+					std::cout << "|x" << i << " * y" << j << "|^2 - (1-t)/d = " << value1 << std::endl;
+					std::cout << "|<x" << j << "|x" << i << "> * <y" << i << "|y" << j << ">| - t =  " << value2 << std::endl;
 */
+					if (i < j)
+					{
+					printf("abs product of x': |<x%d|x%d>| = ", i, j);
+
+					std::cout <<  std::abs((x1[i].adjoint() * x1[j])(0, 0)) << std::endl;
+					}
+
+
+/*
 					printf("product of x': <x%d|x%d> = ", i, j);
 					std::cout <<  (x1[i].adjoint() * x1[j])(0, 0) << std::endl;
-					printf("abs product of x': |<x%d|x%d>| = ", i, j);
-					std::cout <<  std::abs((x1[i].adjoint() * x1[j])(0, 0)) << std::endl;
+*/
+
+/*
 					printf("arg og product of x': arg(<x%d|x%d>) = ", i, j);
 					std::cout <<  std::arg((x1[i].adjoint() * x1[j])(0, 0)) << std::endl;
-					
+*/
+/*					printf("<x2|x0><x0|x1> = ");
+					std::cout << (x1[2].adjoint() * x1[0]) * (x1[0].adjoint() * x1[1]) << endl;
+
+					printf("<x2|(x0><x0)|x1> = ");
+					std::cout << x1[2].adjoint() * (x1[0] * x1[0].adjoint()) * x1[1] << endl;
+
+					printf("x0><x0|> = ");
+					std::cout << x1[0] * x1[0].adjoint() << endl;
+
+
+					printf("<x2|x1> = ");
+					std::cout << x1[2].adjoint() * x1[1] << endl;
+
+					printf("x20|x10 = ");
+					std::cout << (x1[2](0, 0) * x1[1](0, 0)) << endl;
+*/
+
+
 				}
 			}
 		}
 //#endif
 //		printf("f() = %.30f\n size = %.30f\n", (double)s->fval, (double)size);
 //		fprintf(fptr, "%.21f\t %.30f\t %.10f\n", t, s->fval * 1e24, size);
-		printf("%.10f\t %.30f\t %.20f\n", t, s->fval, size);
+//		printf("%.10f\t %.30f\t %.20f\n", t, s->fval, size);
+
+//		if (s->fval < prec * 10 && check == 1)
+		{
+			fprintf(fptr, "%f\t %f\t %.30f\t %.20f\n", param.t, x1[0](0, 0).real(), s->fval, size);
+			float x, y, z;
+			x = (x1[0].adjoint() * (param.W[0][1] * x1[0]))(0, 0).real();
+			y = (x1[0].adjoint() * (param.W[1][0] * x1[0]))(0, 0).real();
+			z = (x1[0].adjoint() * (param.W[1][1] * x1[0]))(0, 0).real();
+//			std::cout << "z = " << (x1[0].adjoint() * (param.W[1][1] * x1[0])) << endl;
+			printf("%f\t  %f\t  %f\t %f\t %.30f\t %.20f\n", param.t, x1[0](0, 0).real(),  x1[0](1, 0).real(), x1[0](2, 0).real(), s->fval, size);
+
+//			printf("%f\t %f\t %f\t %f\t %.30f\t %.20f\n", param.t, x, y, z, s->fval, size);
+
+
+		}
 		t = t - eps;
 		param.t = t;
+		gsl_vector_set_all (ss, step_size);
 		gsl_multimin_fminimizer_set (s, &minex_func, x, ss);
 	}
 
